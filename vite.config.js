@@ -8,14 +8,14 @@ export default defineConfig({
   resolve: {
     alias: {
       // Add an alias to resolve "@deck.gl/widgets" if necessary
-      '@deck.gl/widgets': '@deck.gl/core/dist/experimental/widgets', // adjust this path if needed
+      // '@deck.gl/widgets': '@deck.gl/core/dist/experimental/widgets', // adjust this path if needed
     },
   },
   optimizeDeps: {
     include: [
       '@deck.gl/react', // Make sure this dependency is included in your optimization
       '@deck.gl/core',
-      '@deck.gl/widgets'
+      // '@deck.gl/widgets'
       // Add other dependencies if necessary
     ],
   },
