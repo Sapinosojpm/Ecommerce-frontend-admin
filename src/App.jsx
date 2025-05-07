@@ -33,7 +33,7 @@ import Region from './components/RegionEditor';
 import Review from './components/Review';
 import AdminLocationEditor from './components/AdminLocationEditor';
 import FeePerKiloEditor from './components/FeePerKiloEditor';
-import BestSellerEditor from '../../frontend/src/components/BestSellerEditor';
+// import BestSellerEditor from '../../frontend/src/components/BestSellerEditor';
 import LatestProductEditor from './components/LatestProductEditor';
 import VoucherAmountEditor from './components/VoucherAmountEditor';
 import AdsEditor from './components/AdsEditor';
@@ -94,7 +94,7 @@ const App = () => {
                 <Route path='/review' element={<Review token={token} />} />
                 <Route path='/map' element={<AdminLocationEditor setToken={setToken} />} />
                 <Route path='/weight' element={<FeePerKiloEditor token={token} />} />
-                <Route path='/bestseller' element={<BestSellerEditor token={token} />} />
+               {/* <Route path='/bestseller' element={<BestSellerEditor token={token} />} />*/}
                 <Route path='/latestproduct' element={<LatestProductEditor token={token} />} />
                 <Route path='/voucheramount' element={<VoucherAmountEditor token={token} />} />
                 <Route path='/ads-editor' element={<AdsEditor token={token} />} />
