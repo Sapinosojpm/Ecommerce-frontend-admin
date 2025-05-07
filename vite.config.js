@@ -15,6 +15,7 @@ export default defineConfig({
     include: [
       '@deck.gl/react', // Make sure this dependency is included in your optimization
       '@deck.gl/core',
+      '@deck.gl/widgets'
       // Add other dependencies if necessary
     ],
   },
