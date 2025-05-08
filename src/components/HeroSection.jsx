@@ -45,7 +45,7 @@ const HeroSection = () => {
     if (image) formData.append('image', image);
 
     try {
-      const response = await fetch('http://localhost:4000/api/hero', {
+      const response = await fetch(`${backendUrl}/api/hero`, {
         method: 'PUT',
         body: formData,
       });
@@ -82,7 +82,7 @@ const HeroSection = () => {
       {/* Hero image and overlay */}
       <div className="relative w-full h-96">
         <img
-          src={`http://localhost:4000${hero?.image}`}
+          src={`${backendUrl}${hero?.image}`}
           alt="Hero"
           className="object-cover w-full h-full rounded-lg shadow-lg"
         />
