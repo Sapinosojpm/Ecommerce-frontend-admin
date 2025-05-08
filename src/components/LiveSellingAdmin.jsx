@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:4000', {
+const socket = io(import.meta.env.VITE_BACKEND_URL, {
   transports: ['websocket'],
   autoConnect: true,
   reconnectionAttempts: 5
@@ -22,7 +22,7 @@ const LiveStreamHost = () => {
   const chatBoxRef = useRef(null);
   const [apiError, setApiError] = useState(null);
   const [isAlreadyLive, setIsAlreadyLive] = useState(false);
-
+  const backendUrl = import.meta.env.VITE_BACKEND_URL; // Make sure this matches your backend URL
 
   // Auto-scroll chat
   useEffect(() => {
@@ -81,7 +81,7 @@ const LiveStreamHost = () => {
       console.log('Updating stream status to:', isLive);
       
       // Make API call to update status
-      const response = await fetch('http://localhost:4000/api/livestream/toggle', {
+      const response = await fetch(`${backendUrl}/api/livestream/toggle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -285,7 +285,7 @@ const LiveStreamHost = () => {
   // Save comment to database
   const saveCommentToDatabase = async (name, comment) => {
     try {
-      const response = await fetch('http://localhost:4000/api/livestream/comment', {
+      const response = await fetch(`${backendUrl}/api/livestream/comment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -307,7 +307,7 @@ const LiveStreamHost = () => {
   useEffect(() => {
     const checkStreamStatus = async () => {
       try {
-        const response = await fetch('http://localhost:4000/api/livestream/status');
+        const response = await fetch(`${backendUrl}/api/livestream/status`);
         if (response.ok) {
           const data = await response.json();
           console.log('Initial stream status:', data);

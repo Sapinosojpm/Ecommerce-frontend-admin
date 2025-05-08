@@ -11,7 +11,7 @@ const FooterSection = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [footerLogo, setFooterLogo] = useState(null);  // For storing logo image
 
-  const backendUrl = 'http://localhost:4000'; // Make sure this matches your backend URL
+  const backendUrl = import.meta.env.VITE_BACKEND_URL; // Make sure this matches your backend URL
 
   // Fetch footer data when the component mounts
   useEffect(() => {
@@ -53,11 +53,11 @@ const FooterSection = () => {
   };
 
   return (
-    <div className="card mb-10 shadow-lg p-6 rounded-xl bg-white">
-      <h2 className="text-xl font-semibold mb-6">Footer Section</h2>
+    <div className="p-6 mb-10 bg-white shadow-lg card rounded-xl">
+      <h2 className="mb-6 text-xl font-semibold">Footer Section</h2>
       <button
         onClick={() => setIsEditing(!isEditing)}
-        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 mb-6"
+        className="px-6 py-3 mb-6 text-white bg-green-600 rounded-lg hover:bg-green-700"
       >
         {isEditing ? 'Cancel Editing' : 'Edit Footer Section'}
       </button>
@@ -125,13 +125,13 @@ const FooterSection = () => {
               className="w-full p-3 border rounded-lg focus:outline-none"
             />
             {footerData.logoUrl && !footerLogo && (
-              <img src={footerData.logoUrl} alt="Footer Logo" className="mt-2 max-w-full h-auto" />
+              <img src={footerData.logoUrl} alt="Footer Logo" className="h-auto max-w-full mt-2" />
             )}
           </div>
 
           <button
             type="submit"
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="px-6 py-3 text-white bg-green-600 rounded-lg hover:bg-green-700"
           >
             Update Footer Section
           </button>
@@ -142,7 +142,7 @@ const FooterSection = () => {
           <p><strong>Company Links:</strong> {footerData.companyLinks.join(', ')}</p>
           <p><strong>Contact Information:</strong> {footerData.contactInfo.join(', ')}</p>
           <p><strong>Copyright Text:</strong> {footerData.copyrightText}</p>
-          {footerData.logoUrl && <img src={footerData.logoUrl} alt="Footer Logo" className="mt-4 max-w-full h-auto" />}
+          {footerData.logoUrl && <img src={footerData.logoUrl} alt="Footer Logo" className="h-auto max-w-full mt-4" />}
         </div>
       )}
     </div>
