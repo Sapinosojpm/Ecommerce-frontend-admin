@@ -113,7 +113,7 @@ const Orders = ({ token }) => {
 
   const handleConfirm = async () => {
     try {
-      await axios.post(`${backendUrl}/api/orders/confirm`, { orderId });
+      await axios.post(`${backendUrl}/api/orders/confirm-payment`, { orderId });
       setOrder((prevOrder) => ({ ...prevOrder, payment: true }));
     } catch (error) {
       console.error("Error confirming payment:", error);
