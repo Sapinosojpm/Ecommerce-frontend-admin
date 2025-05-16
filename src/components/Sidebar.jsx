@@ -9,6 +9,7 @@ import {
   FaComments, FaEdit, FaTachometerAlt, FaAngleDown, FaAngleRight
 } from 'react-icons/fa';
 
+
 const Sidebar = () => {
   const [openCategory, setOpenCategory] = useState(null);
   const [collapsed, setCollapsed] = useState(false); // For future mobile responsiveness
@@ -38,6 +39,7 @@ const Sidebar = () => {
     { path: '/add', icon: <FaPlus className='w-5 h-5' />, text: 'Add items' },
     { path: '/list', icon: <FaList className='w-5 h-5' />, text: 'List items' },
     { path: '/orders', icon: <FaBox className='w-5 h-5' />, text: 'Orders' },
+    {path: '/return', icon: <FaBox className='w-5 h-5' />, text:'Return'},
     { path: '/users', icon: <FaUsers className='w-5 h-5' />, text: 'Users' },
   ];
 
