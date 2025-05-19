@@ -1,195 +1,208 @@
-import React from 'react';
-import { FiX, FiRotateCw, FiCheck, FiXCircle, FiDollarSign } from 'react-icons/fi';
-import moment from 'moment';
+import React, { useState, useEffect } from 'react';
+import { Dialog } from '@headlessui/react';
+import { FiX } from 'react-icons/fi';
 
-const ReturnDetailsModal = ({ returnItem, onClose, onUpdateStatus, processingAction }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'PHP'
-    }).format(amount || 0);
+const ActionModal = ({ isOpen, onClose, returnItem, onAction }) => {
+  const [notes, setNotes] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundMethod, setRefundMethod] = useState('original_payment');
+  const [actionType, setActionType] = useState(null);
+  
+  // Reset form when modal opens or closes
+  useEffect(() => {
+    if (isOpen) {
+      setNotes('');
+      setRefundAmount(returnItem ? String(returnItem.refundAmount || '') : '');
+      setRefundMethod('original_payment');
+      setActionType(null);
+    }
+  }, [isOpen, returnItem]);
+  
+  const handlePrepareAction = (action) => {
+    setActionType(action);
   };
-
+  
+  const handleConfirmAction = () => {
+    // Only proceed if we have an action type selected
+    if (!actionType) return;
+    
+    // Handle different action types
+    switch (actionType) {
+      case 'approve':
+        onAction(
+          returnItem._id,
+          'approve',
+          notes,
+          refundAmount ? parseFloat(refundAmount) : undefined,
+          refundMethod
+        );
+        break;
+      case 'reject':
+        onAction(returnItem._id, 'reject', notes);
+        break;
+      case 'refund':
+        onAction(
+          returnItem._id,
+          'refund',
+          notes,
+          refundAmount ? parseFloat(refundAmount) : undefined,
+          refundMethod
+        );
+        break;
+      default:
+        console.error('Unknown action type:', actionType);
+    }
+    
+    onClose();
+  };
+  
+  if (!returnItem) return null;
+  
+  const originalAmount = returnItem.refundAmount || 0;
+  const itemDetails = returnItem.itemDetails || {};
+  
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-          <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={onClose}></div>
+    <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+      <div className="relative z-50 w-full max-w-md p-6 mx-auto bg-white rounded shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Return Request: {returnItem._id.slice(0, 8)}</h3>
+          <button onClick={onClose}>
+            <FiX className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
 
-        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        {/* Return Details */}
+        <div className="p-3 mb-4 rounded bg-gray-50">
+          <p className="mb-1 text-sm"><strong>Status:</strong> {returnItem.status}</p>
+          <p className="mb-1 text-sm"><strong>Item:</strong> {itemDetails.name || returnItem.itemId?.substring(0, 8)}</p>
+          <p className="mb-1 text-sm"><strong>Reason:</strong> {returnItem.reason?.replace('_', ' ')}</p>
+          <p className="text-sm"><strong>Description:</strong> {returnItem.description || 'No details provided'}</p>
+        </div>
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div className="flex justify-between items-start">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Return Details (#{returnItem._id.slice(-6)})
-              </h3>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-500 focus:outline-none"
-              >
-                <FiX size={24} />
-              </button>
+        {/* Action Selection */}
+        {!actionType ? (
+          <>
+            <p className="mb-4 text-sm text-gray-700">
+              What action would you like to perform on this return request?
+            </p>
+            <div className="flex flex-col space-y-2">
+              {/* Only show Approve button if status is not already approved */}
+              {returnItem.status !== 'approved' && (
+                <button 
+                  onClick={() => handlePrepareAction('approve')} 
+                  className="w-full px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+                >
+                  Approve
+                </button>
+              )}
+              
+              {/* Only show Reject button if status is pending */}
+              {returnItem.status === 'pending' && (
+                <button 
+                  onClick={() => handlePrepareAction('reject')} 
+                  className="w-full px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700"
+                >
+                  Reject
+                </button>
+              )}
+              
+              {/* Only show Process Refund button if status is approved */}
+              {returnItem.status === 'approved' && (
+                <button 
+                  onClick={() => handlePrepareAction('refund')} 
+                  className="w-full px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700"
+                >
+                  Process Refund
+                </button>
+              )}
             </div>
-
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="text-md font-medium text-gray-900 mb-2">Order Information</h4>
-                <div className="space-y-2">
-                  <p className="text-sm">
-                    <span className="font-medium text-gray-700">Order #:</span> {returnItem.orderId?.orderNumber || 'N/A'}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-gray-700">Customer:</span> {returnItem.userId?.name || 'Guest'}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-gray-700">Date:</span> {moment(returnItem.createdAt).format('MMM D, YYYY h:mm A')}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-gray-700">Status:</span> 
-                    <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
-                      returnItem.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      returnItem.status === 'approved' ? 'bg-blue-100 text-blue-800' :
-                      returnItem.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {returnItem.status.charAt(0).toUpperCase() + returnItem.status.slice(1)}
-                    </span>
-                  </p>
-                </div>
+          </>
+        ) : (
+          <>
+            {/* Action Form */}
+            <div className="mb-4">
+              <h4 className="mb-2 font-medium">
+                {actionType === 'approve' ? 'Approve Return' : 
+                 actionType === 'reject' ? 'Reject Return' : 'Process Refund'}
+              </h4>
+              
+              {/* Admin Notes - Common to all actions */}
+              <div className="mb-3">
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Admin Notes
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  rows="2"
+                  placeholder="Add any notes about this action"
+                />
               </div>
-
-              <div>
-                <h4 className="text-md font-medium text-gray-900 mb-2">Refund Information</h4>
-                <div className="space-y-2">
-                  <p className="text-sm">
-                    <span className="font-medium text-gray-700">Refund Amount:</span> {formatCurrency(returnItem.refundAmount)}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-gray-700">Refund Method:</span> 
-                    <span className="capitalize ml-1">
-                      {returnItem.refundMethod?.replace('_', ' ') || 'Not specified'}
-                    </span>
-                  </p>
-                  {returnItem.status === 'refunded' && (
-                    <p className="text-sm">
-                      <span className="font-medium text-gray-700">Refund Date:</span> 
-                      {moment(returnItem.updatedAt).format('MMM D, YYYY h:mm A')}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <h4 className="text-md font-medium text-gray-900 mb-2">Return Reason</h4>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <p className="text-sm font-medium capitalize">{returnItem.reason.replace('_', ' ')}</p>
-                <p className="text-sm text-gray-600 mt-1">{returnItem.description}</p>
-              </div>
-            </div>
-
-            {returnItem.images && returnItem.images.length > 0 && (
-              <div className="mt-6">
-                <h4 className="text-md font-medium text-gray-900 mb-2">Evidence Photos</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {returnItem.images.map((image, index) => (
-                    <div key={index} className="border rounded-md overflow-hidden">
-                      <img 
-                        src={`${process.env.REACT_APP_BACKEND_URL}/${image.path}`} 
-                        alt={`Evidence ${index + 1}`}
-                        className="w-full h-32 object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6">
-              <h4 className="text-md font-medium text-gray-900 mb-2">Status History</h4>
-              <div className="border-l-2 border-gray-200 pl-4 space-y-4">
-                {returnItem.statusHistory?.map((history, index) => (
-                  <div key={index} className="relative">
-                    <div className="absolute -left-4 top-1 w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <div className="ml-2">
-                      <p className="text-sm font-medium text-gray-900">
-                        {history.status.charAt(0).toUpperCase() + history.status.slice(1)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {moment(history.changedAt).format('MMM D, YYYY h:mm A')}
-                      </p>
-                      {history.notes && (
-                        <p className="text-xs text-gray-600 mt-1">{history.notes}</p>
-                      )}
-                    </div>
+              
+              {/* Refund Options - Only for approve and refund actions */}
+              {(actionType === 'approve' || actionType === 'refund') && (
+                <>
+                  <div className="mb-3">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">
+                      Refund Amount
+                    </label>
+                    <input
+                      type="number"
+                      value={refundAmount}
+                      onChange={(e) => setRefundAmount(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      placeholder={`Original amount: ${originalAmount}`}
+                      min="0"
+                      step="0.01"
+                    />
                   </div>
-                ))}
-              </div>
+                  
+                  <div className="mb-3">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">
+                      Refund Method
+                    </label>
+                    <select
+                      value={refundMethod}
+                      onChange={(e) => setRefundMethod(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="original_payment">Original Payment Method</option>
+                      <option value="store_credit">Store Credit</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="gcash">GCash</option>
+                      <option value="none">No Refund (Store Exchange)</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-
-          <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            {returnItem.status === 'pending' && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onUpdateStatus(returnItem._id, 'approve', returnItem.refundAmount)}
-                  disabled={processingAction === returnItem._id}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-                >
-                  {processingAction === returnItem._id ? (
-                    <FiRotateCw className="animate-spin mr-2" />
-                  ) : (
-                    <FiCheck className="mr-2" />
-                  )}
-                  Approve Return
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUpdateStatus(returnItem._id, 'reject')}
-                  disabled={processingAction === returnItem._id}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-                >
-                  {processingAction === returnItem._id ? (
-                    <FiRotateCw className="animate-spin mr-2" />
-                  ) : (
-                    <FiXCircle className="mr-2" />
-                  )}
-                  Reject Return
-                </button>
-              </>
-            )}
-
-            {returnItem.status === 'approved' && (
+            
+            {/* Action Buttons */}
+            <div className="flex space-x-2">
               <button
-                type="button"
-                onClick={() => onUpdateStatus(returnItem._id, 'refund')}
-                disabled={processingAction === returnItem._id}
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                onClick={() => setActionType(null)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
               >
-                {processingAction === returnItem._id ? (
-                  <FiRotateCw className="animate-spin mr-2" />
-                ) : (
-                  <FiDollarSign className="mr-2" />
-                )}
-                Process Refund
+                Back
               </button>
-            )}
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+              <button
+                onClick={handleConfirmAction}
+                className={`flex-1 px-4 py-2 text-white rounded ${
+                  actionType === 'approve' ? 'bg-blue-600 hover:bg-blue-700' :
+                  actionType === 'reject' ? 'bg-red-600 hover:bg-red-700' :
+                  'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                Confirm
+              </button>
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </Dialog>
   );
 };
 
-export default ReturnDetailsModal;
+export default ActionModal;
