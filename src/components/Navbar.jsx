@@ -4,29 +4,29 @@ import { assets } from "../assets/assets";
 const Navbar = ({ setToken }) => {
   
   // ✅ Auto Logout When Token Expires
-  useEffect(() => {
-    const checkTokenExpiration = () => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        try {
-          const payload = JSON.parse(atob(token.split(".")[1])); // Decode JWT payload
-          const isExpired = payload.exp * 1000 < Date.now(); // Convert expiry to milliseconds
-          if (isExpired) {
-            console.warn("⚠️ Token expired. Logging out...");
-            logout();
-          }
-        } catch (error) {
-          console.error("❌ Invalid token format. Logging out...");
-          logout();
-        }
-      }
-    };
+  // useEffect(() => {
+  //   const checkTokenExpiration = () => {
+  //     const token = localStorage.getItem("token");
+  //     if (token) {
+  //       try {
+  //         const payload = JSON.parse(atob(token.split(".")[1])); // Decode JWT payload
+  //         const isExpired = payload.exp * 1000 < Date.now(); // Convert expiry to milliseconds
+  //         if (isExpired) {
+  //           console.warn("⚠️ Token expired. Logging out...");
+  //           logout();
+  //         }
+  //       } catch (error) {
+  //         console.error("❌ Invalid token format. Logging out...");
+  //         logout();
+  //       }
+  //     }
+  //   };
 
-    checkTokenExpiration(); // ✅ Check on page load
+  //   checkTokenExpiration(); // ✅ Check on page load
 
-    const interval = setInterval(checkTokenExpiration, 60000); // ✅ Check every 60 sec
-    return () => clearInterval(interval); // Cleanup on unmount
-  }, []);
+  //   const interval = setInterval(checkTokenExpiration, 60000); // ✅ Check every 60 sec
+  //   return () => clearInterval(interval); // Cleanup on unmount
+  // }, []);
 
   // ✅ Logout Function
   const logout = () => {
