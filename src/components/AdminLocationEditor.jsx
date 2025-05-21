@@ -85,7 +85,7 @@ const AdminLocationEditor = () => {
         </div>
         <button
           type="submit"
-          className="px-4 py-2 text-white bg-green-500 rounded-md hover:bg-green-600"
+          className="px-4 py-2 text-white bg-indigo-500 rounded-md hover:bg-indigo-600"
         >
           Save Location
         </button>

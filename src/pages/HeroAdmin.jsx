@@ -126,15 +126,15 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-8 bg-gray-50">
-      <h1 className="text-3xl font-semibold text-center mb-10">Admin Panel</h1>
+    <div className="container p-8 mx-auto bg-gray-50">
+      <h1 className="mb-10 text-3xl font-semibold text-center">Admin Panel</h1>
 
       {/* Hero Section */}
-      <div className="card mb-10 shadow-lg p-6 rounded-xl bg-white">
-        <h2 className="text-xl font-semibold mb-6">Hero Section</h2>
+      <div className="p-6 mb-10 bg-white shadow-lg card rounded-xl">
+        <h2 className="mb-6 text-xl font-semibold">Hero Section</h2>
         <button
           onClick={() => setIsEditingHero(!isEditingHero)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mb-6"
+          className="px-6 py-3 mb-6 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
         >
           {isEditingHero ? 'Cancel Editing' : 'Edit Hero Section'}
         </button>
@@ -169,11 +169,11 @@ const AdminPage = () => {
                 className="w-full p-3 border rounded-lg focus:outline-none"
               />
               {heroData.image && !imageFile && (
-                <img src={heroData.image} alt="Current Hero" className="mt-2 max-w-full h-auto" />
+                <img src={heroData.image} alt="Current Hero" className="h-auto max-w-full mt-2" />
               )}
             </div>
 
-            <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <button type="submit" className="px-6 py-3 text-white bg-green-600 rounded-lg hover:bg-green-700">
               Update Hero Section
             </button>
           </form>
@@ -181,17 +181,17 @@ const AdminPage = () => {
           <div className="mt-4">
             <h3 className="text-xl">{heroData.title}</h3>
             <p>{heroData.subtitle}</p>
-            {heroData.image && <img src={heroData.image} alt="Current Hero" className="mt-4 max-w-full h-20" />}
+            {heroData.image && <img src={heroData.image} alt="Current Hero" className="h-20 max-w-full mt-4" />}
           </div>
         )}
       </div>
 
       {/* Footer Section */}
-      <div className="card mb-10 shadow-lg p-6 rounded-xl bg-white">
-        <h2 className="text-xl font-semibold mb-6">Footer Section</h2>
+      <div className="p-6 mb-10 bg-white shadow-lg card rounded-xl">
+        <h2 className="mb-6 text-xl font-semibold">Footer Section</h2>
         <button
           onClick={() => setIsEditingFooter(!isEditingFooter)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mb-6"
+          className="px-6 py-3 mb-6 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
         >
           {isEditingFooter ? 'Cancel Editing' : 'Edit Footer Section'}
         </button>
@@ -238,7 +238,7 @@ const AdminPage = () => {
               />
             </div>
 
-            <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <button type="submit" className="px-6 py-3 text-white bg-green-600 rounded-lg hover:bg-green-700">
               Update Footer Section
             </button>
           </form>
@@ -253,11 +253,11 @@ const AdminPage = () => {
       </div>
 
       {/* About Section */}
-      <div className="card mb-10 shadow-lg p-6 rounded-xl bg-white">
-        <h2 className="text-xl font-semibold mb-6">About Section</h2>
+      <div className="p-6 mb-10 bg-white shadow-lg card rounded-xl">
+        <h2 className="mb-6 text-xl font-semibold">About Section</h2>
         <button
           onClick={() => setIsEditingAbout(!isEditingAbout)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mb-6"
+          className="px-6 py-3 mb-6 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
         >
           {isEditingAbout ? 'Cancel Editing' : 'Edit About Section'}
         </button>
@@ -326,11 +326,11 @@ const AdminPage = () => {
                 className="w-full p-3 border rounded-lg focus:outline-none"
               />
               {aboutData.image && !aboutImageFile && (
-                <img src={aboutData.image} alt="About Section" className="mt-2 max-w-full h-auto" />
+                <img src={aboutData.image} alt="About Section" className="h-auto max-w-full mt-2" />
               )}
             </div>
 
-            <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <button type="submit" className="px-6 py-3 text-white bg-green-600 rounded-lg hover:bg-green-700">
               Update About Section
             </button>
           </form>
@@ -342,17 +342,17 @@ const AdminPage = () => {
             <p>{aboutData.qualityAssurance}</p>
             <p>{aboutData.convenience}</p>
             <p>{aboutData.customerService}</p>
-            {aboutData.image && <img src={aboutData.image} alt="About Section" className="mt-4 max-w-full h-20" />}
+            {aboutData.image && <img src={aboutData.image} alt="About Section" className="h-20 max-w-full mt-4" />}
           </div>
         )}
       </div>
 
       {/* Contact Section */}
-      <div className="card mb-10 shadow-lg p-6 rounded-xl bg-white">
-        <h2 className="text-xl font-semibold mb-6">Contact Section</h2>
+      <div className="p-6 mb-10 bg-white shadow-lg card rounded-xl">
+        <h2 className="mb-6 text-xl font-semibold">Contact Section</h2>
         <button
           onClick={() => setIsEditingContact(!isEditingContact)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mb-6"
+          className="px-6 py-3 mb-6 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
         >
           {isEditingContact ? 'Cancel Editing' : 'Edit Contact Section'}
         </button>
@@ -407,11 +407,11 @@ const AdminPage = () => {
                 className="w-full p-3 border rounded-lg focus:outline-none"
               />
               {contactData.image && !contactImageFile && (
-                <img src={contactData.image} alt="Contact Section" className="mt-2 max-w-full h-auto" />
+                <img src={contactData.image} alt="Contact Section" className="h-auto max-w-full mt-2" />
               )}
             </div>
 
-            <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <button type="submit" className="px-6 py-3 text-white bg-green-600 rounded-lg hover:bg-green-700">
               Update Contact Section
             </button>
           </form>
@@ -421,7 +421,7 @@ const AdminPage = () => {
             <p>{contactData.address}</p>
             <p>{contactData.telephone}</p>
             <p>{contactData.email}</p>
-            {contactData.image && <img src={contactData.image} alt="Contact Section" className="mt-4 max-w-full h-auto" />}
+            {contactData.image && <img src={contactData.image} alt="Contact Section" className="h-auto max-w-full mt-4" />}
           </div>
         )}
       </div>

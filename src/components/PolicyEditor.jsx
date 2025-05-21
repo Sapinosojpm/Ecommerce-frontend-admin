@@ -23,7 +23,6 @@ const PolicyEditor = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
@@ -73,56 +72,60 @@ const PolicyEditor = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-      <h2 className="text-3xl font-bold mb-6 text-center">Manage Policies</h2>
-      
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md max-w-xl mx-auto space-y-4">
+    <div className="min-h-screen p-8 bg-gray-50">
+      <h2 className="mb-8 text-3xl font-bold text-center text-gray-700">Policy Manager</h2>
+
+      <form onSubmit={handleSubmit} className="max-w-xl p-6 mx-auto space-y-4 bg-white shadow rounded-2xl">
         <input
           type="text"
           placeholder="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full p-3 border rounded-md"
+          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400"
           required
         />
         <textarea
           placeholder="Description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full p-3 border rounded-md"
+          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400"
           required
         />
-        <input type="file" onChange={(e) => setImage(e.target.files[0])} className="w-full p-2 border rounded-md" />
+        <input
+          type="file"
+          onChange={(e) => setImage(e.target.files[0])}
+          className="w-full p-2 border border-gray-300 rounded-xl"
+        />
         <button
           type="submit"
-          className="w-full py-3 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 transition duration-300"
+          className="w-full py-3 font-semibold text-white transition duration-300 bg-indigo-600 rounded-xl hover:bg-indigo-700"
         >
           {editingPolicy ? 'Update Policy' : 'Add Policy'}
         </button>
       </form>
 
-      <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid gap-6 mt-10 sm:grid-cols-2 lg:grid-cols-3">
         {policies.map((policy) => (
-          <div key={policy._id} className="bg-white p-6 rounded-lg shadow-md text-center">
+          <div key={policy._id} className="p-6 space-y-4 text-center bg-white shadow rounded-2xl">
             {policy.image && (
               <img
                 src={`${import.meta.env.VITE_BACKEND_URL}${policy.image}`}
                 alt={policy.title}
-                className="w-24 h-24 mx-auto mb-4 object-contain"
+                className="object-contain w-20 h-20 mx-auto"
               />
             )}
-            <h3 className="text-lg font-bold">{policy.title}</h3>
-            <p className="text-gray-600 mb-4">{policy.description}</p>
-            <div className="flex justify-center gap-4">
+            <h3 className="text-lg font-semibold text-indigo-700">{policy.title}</h3>
+            <p className="text-sm text-gray-600">{policy.description}</p>
+            <div className="flex justify-center gap-3">
               <button
                 onClick={() => handleEdit(policy)}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
+                className="px-4 py-2 text-white transition bg-indigo-500 rounded-lg hover:bg-indigo-600"
               >
                 Edit
               </button>
               <button
                 onClick={() => handleDelete(policy._id)}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+                className="px-4 py-2 text-white transition bg-red-500 rounded-lg hover:bg-red-600"
               >
                 Delete
               </button>

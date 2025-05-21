@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Add from './pages/Add';
@@ -33,7 +34,7 @@ import Region from './components/RegionEditor';
 import Review from './components/Review';
 import AdminLocationEditor from './components/AdminLocationEditor';
 import FeePerKiloEditor from './components/FeePerKiloEditor';
-// import BestSellerEditor from '../../frontend/src/components/BestSellerEditor';
+import BestSellerEditor from './components/BestSellerEditor';
 import LatestProductEditor from './components/LatestProductEditor';
 import VoucherAmountEditor from './components/VoucherAmountEditor';
 import AdsEditor from './components/AdsEditor';
@@ -41,12 +42,15 @@ import NavigationManager from './components/NavigationLinksManager';
 import LiveSelling from './components/LiveSellingAdmin';
 import AdminChatPanel from './components/AdminChatPanel';
 import AdminReturns from './components/AdminReturns';
+import AboutPage from './components/AboutPageEditor';
+import ContactPage from './components/ContactPageEditor';
+
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = '₱';
 
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
-  const location = useLocation(); // Get current route path
+  const location = useLocation();
 
   useEffect(() => {
     localStorage.setItem('token', token);
@@ -56,59 +60,72 @@ const App = () => {
     <div className='min-h-screen bg-gray-50'>
       <ToastContainer />
       {token === "" ? (
-        <Login setToken={setToken} />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Login setToken={setToken} />
+        </motion.div>
       ) : (
         <>
-        <AutoLogout setToken={setToken} />
+          <AutoLogout setToken={setToken} />
           <Navbar setToken={setToken} />
           <hr />
           <div className='flex w-full'>
             <Sidebar />
-            
+
             <div className='w-[70%] mx-auto ml-[max(5vw,25px)] my-8 text-gray-600 text-base'>
-              <Routes>
-                
-               <Route path='/return' element={<AdminReturns token={token} />} />
-                <Route path='/add' element={<Add token={token} />} />
-                <Route path='/list' element={<List token={token} />} />
-                <Route path='/orders' element={<Orders token={token} />} />
-                <Route path='/orderAnalytics' element={<OrderAnalytics token={token} />} />
-                <Route path='/hero' element={<Hero token={token} />} />
-                <Route path='/users' element={<Users token={token} />} />
-                <Route path='/edit' element={<Edit token={token} />} />
-                <Route path='/addCard' element={<AddCard token={token} />} />
-                <Route path='/addMemberCard' element={<AddMemberCard token={token} />} />
-                <Route path='/addIntro' element={<AddIntro token={token} />} />
-                <Route path='*' element={<List token={token} />} />
-                <Route path='/deals' element={<Deals token={token} />} />
-                <Route path='/about' element={<AboutSection token={token} />} />
-                <Route path='/contact' element={<ContactSection token={token} />} />
-                <Route path='/footer' element={<FooterSection token={token} />} />
-                <Route path='/eventCalendar' element={<EventCalendar token={token} />} />
-                <Route path='/job' element={<JobPopupEditor token={token} />} />
-                <Route path='/youtubeUrl' element={<AdminYoutubeEditor token={token} />} />
-                <Route path='/adminDiscount' element={<AdminDiscount token={token} />} />
-                <Route path='/faq' element={<FAQ token={token} />} />
-                <Route path='/logo' element={<LogoEditor token={token} />} />
-                <Route path='/policy' element={<Policy token={token} />} />
-                <Route path='/homepage' element={<HomePageEditor token={token} />} />
-                <Route path='/category' element={<CategoryEditor token={token} />} />
-                <Route path='/region' element={<Region token={token} />} />
-                <Route path='/review' element={<Review token={token} />} />
-                <Route path='/map' element={<AdminLocationEditor setToken={setToken} />} />
-                <Route path='/weight' element={<FeePerKiloEditor token={token} />} />
-               {/* <Route path='/bestseller' element={<BestSellerEditor token={token} />} />*/}
-                <Route path='/latestproduct' element={<LatestProductEditor token={token} />} />
-                <Route path='/voucheramount' element={<VoucherAmountEditor token={token} />} />
-                <Route path='/ads-editor' element={<AdsEditor token={token} />} />
-                <Route path='/navlinks' element={<NavigationManager token={token}/>}/>
-                <Route path='/live-selling' element={<LiveSelling token={token}/>}/>
-                <Route path='/live-chat' element={<AdminChatPanel token={token}/>}/>
-              </Routes>
-            
-            
-            
-             
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={location.pathname}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <Routes location={location} key={location.pathname}>
+                    <Route path='/contact-page' element={<ContactPage token={token} />} />
+                    <Route path='/about-page' element={<AboutPage token={token} />} />
+                    <Route path='/return' element={<AdminReturns token={token} />} />
+                    <Route path='/add' element={<Add token={token} />} />
+                    <Route path='/list' element={<List token={token} />} />
+                    <Route path='/orders' element={<Orders token={token} />} />
+                    <Route path='/orderAnalytics' element={<OrderAnalytics token={token} />} />
+                    <Route path='/hero' element={<Hero token={token} />} />
+                    <Route path='/users' element={<Users token={token} />} />
+                    <Route path='/edit' element={<Edit token={token} />} />
+                    <Route path='/addCard' element={<AddCard token={token} />} />
+                    <Route path='/addMemberCard' element={<AddMemberCard token={token} />} />
+                    <Route path='/addIntro' element={<AddIntro token={token} />} />
+                    <Route path='*' element={<List token={token} />} />
+                    <Route path='/deals' element={<Deals token={token} />} />
+                    <Route path='/about' element={<AboutSection token={token} />} />
+                    <Route path='/contact' element={<ContactSection token={token} />} />
+                    <Route path='/footer' element={<FooterSection token={token} />} />
+                    <Route path='/eventCalendar' element={<EventCalendar token={token} />} />
+                    <Route path='/job' element={<JobPopupEditor token={token} />} />
+                    <Route path='/youtubeUrl' element={<AdminYoutubeEditor token={token} />} />
+                    <Route path='/adminDiscount' element={<AdminDiscount token={token} />} />
+                    <Route path='/faq' element={<FAQ token={token} />} />
+                    <Route path='/logo' element={<LogoEditor token={token} />} />
+                    <Route path='/policy' element={<Policy token={token} />} />
+                    <Route path='/homepage' element={<HomePageEditor token={token} />} />
+                    <Route path='/category' element={<CategoryEditor token={token} />} />
+                    <Route path='/region' element={<Region token={token} />} />
+                    <Route path='/review' element={<Review token={token} />} />
+                    <Route path='/map' element={<AdminLocationEditor setToken={setToken} />} />
+                    <Route path='/weight' element={<FeePerKiloEditor token={token} />} />
+                    <Route path='/bestseller' element={<BestSellerEditor token={token} />} />
+                    <Route path='/latestproduct' element={<LatestProductEditor token={token} />} />
+                    <Route path='/voucheramount' element={<VoucherAmountEditor token={token} />} />
+                    <Route path='/ads-editor' element={<AdsEditor token={token} />} />
+                    <Route path='/navlinks' element={<NavigationManager token={token} />} />
+                    <Route path='/live-selling' element={<LiveSelling token={token} />} />
+                    <Route path='/live-chat' element={<AdminChatPanel token={token} />} />
+                  </Routes>
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </>

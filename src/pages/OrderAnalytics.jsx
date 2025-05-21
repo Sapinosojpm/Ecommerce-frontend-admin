@@ -9,7 +9,7 @@ import * as XLSX from "xlsx";
 import ViewersTracker from "../components/ViewersTracker";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-
+import Review from "../components/Review";
 const OrderAnalytics = ({ token }) => {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
@@ -1168,6 +1168,7 @@ const OrderAnalytics = ({ token }) => {
       </div>
 
       <ViewersTracker />
+      <Review />
     </div>
   );
 };

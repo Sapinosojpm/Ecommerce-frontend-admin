@@ -70,7 +70,7 @@ const HeroSection = () => {
   if (error) return <div className="text-xl text-center text-red-500">{error}</div>;
 
   return (
-    <div className="grid grid-cols-1 gap-8 p-6 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-8 p-6 md:grid-cols-1">
       {/* Preview */}
       <div className="relative w-full h-96">
         {hero?.type === 'video' ? (
@@ -126,12 +126,12 @@ const HeroSection = () => {
           </div>
           {type === 'image' && (
             <div className="mb-4">
-              <label className="block mb-2 text-lg font-medium text-gray-800">Upload Image</label>
+              <label className="block mb-2 text-lg font-medium text-gray-800 ">Upload Image</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="w-full p-3 bg-gray-200 rounded-lg"
+                className="block w-full text-sm border rounded-lg shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"
               />
             </div>
           )}
@@ -142,7 +142,7 @@ const HeroSection = () => {
                 type="file"
                 accept="video/*"
                 onChange={handleVideoChange}
-                className="w-full p-3 bg-gray-200 rounded-lg"
+                className="block w-full text-sm border rounded-lg shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"
               />
             </div>
           )}
@@ -150,7 +150,7 @@ const HeroSection = () => {
             type="submit"
             disabled={isSubmitting}
             className={`w-full py-3 mt-6 text-white rounded-lg transition ${
-              isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
+              isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-500 hover:bg-indigo-600'
             }`}
           >
             {isSubmitting ? 'Uploading...' : 'Update Hero Section'}

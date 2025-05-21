@@ -38,9 +38,9 @@ const LogoEditor = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Logo Editor</h2>
+    <div className="flex justify-center bg-gray-100">
+      <div className="w-full max-w-md p-8 m-8 bg-white rounded-lg shadow-lg">
+        {/* <h2 className="mb-6 text-2xl font-bold text-center">Logo</h2> */}
 
         {logo && <img src={logo} alt="Current Logo" className="w-32 mx-auto mb-4" />}
 
@@ -49,11 +49,11 @@ const LogoEditor = () => {
             type="file"
             accept="image/*"
             onChange={(e) => setFile(e.target.files[0])}
-            className="block w-full p-2 border rounded mb-4"
+            className="block w-full my-6 text-sm border rounded-lg shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"
           />
           <button
             type="submit"
-            className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700"
+            className="w-full px-4 py-2 text-white transition duration-500 bg-indigo-500 rounded hover:bg-black"
           >
             Upload Logo
           </button>

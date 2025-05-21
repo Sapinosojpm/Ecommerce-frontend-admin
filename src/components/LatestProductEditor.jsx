@@ -35,7 +35,7 @@ const LatestProductEditor = () => {
                 onChange={(e) => setMaxDisplay(e.target.value)}
                 className="w-full p-2 border"
             />
-            <button onClick={handleSave} className="px-4 py-2 mt-2 text-white bg-blue-500 rounded">
+            <button onClick={handleSave} className="px-4 py-2 mt-2 text-white transition duration-500 bg-indigo-500 rounded hover:bg-black" > 
                 Save
             </button>
         </div>

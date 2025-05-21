@@ -6,7 +6,7 @@ import parcel_icon from './parcel_icon.svg'
 import hasharon from './hasharon_logo.png'
 import dashboard from './dashboard.png'
 import tracking from './tracking.png'
-
+import ecommerce from './ecommerce.png'
 export const assets = {
     logo,
     add_icon,
@@ -15,6 +15,7 @@ export const assets = {
     parcel_icon,
     hasharon,
     dashboard,
-    tracking
+    tracking,
+    ecommerce
 }
 
