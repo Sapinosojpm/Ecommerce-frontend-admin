@@ -51,10 +51,42 @@ export const currency = '₱';
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Check for screen size to determine initial sidebar state
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    
+    // Set initial state based on screen size
+    handleResize();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('token', token);
   }, [token]);
+
+  // Close sidebar when navigating to a new page on mobile
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname]);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   return (
     <div className='min-h-screen bg-gray-50'>
@@ -70,12 +102,37 @@ const App = () => {
       ) : (
         <>
           <AutoLogout setToken={setToken} />
-          <Navbar setToken={setToken} />
+          <Navbar setToken={setToken} toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
           <hr />
-          <div className='flex w-full'>
-            <Sidebar />
+          <div className='relative flex w-full'>
+            {/* Sidebar with overlay for mobile */}
+            <div className={`${sidebarOpen ? 'block' : 'hidden'} md:block`}>
+              <div 
+                className="fixed inset-0 z-20 bg-black bg-opacity-50 md:hidden"
+                onClick={toggleSidebar}
+              ></div>
+              <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+                fixed md:static top-0 left-0 h-full z-30 transition-transform duration-300 ease-in-out 
+                bg-white shadow-lg md:shadow-none md:translate-x-0`}
+              >
+                <Sidebar />
+              </div>
+            </div>
 
-            <div className='w-[70%] mx-auto ml-[max(5vw,25px)] my-8 text-gray-600 text-base'>
+            {/* Hamburger menu for mobile - This should be in Navbar component ideally */}
+            <div className="fixed z-50 md:hidden bottom-4 right-4">
+              <button 
+                onClick={toggleSidebar}
+                className="p-3 text-white transition-colors bg-indigo-600 rounded-full shadow-lg hover:bg-indigo-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Main content area */}
+            <div className='w-full md:w-[70%] px-4 md:px-8 mx-auto md:ml-[max(5vw,25px)] my-8 text-gray-600 text-base'>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={location.pathname}
