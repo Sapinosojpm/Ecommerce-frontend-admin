@@ -846,7 +846,7 @@ const OrderAnalytics = ({ token }) => {
           </div>
           <button 
             onClick={fetchAllOrders}
-            className="self-end px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
+            className="self-end px-4 py-2 text-indigo-800 transition duration-500 bg-transparent border border-indigo-800 rounded hover:bg-indigo-600 hover:text-white"
           >
             Apply
           </button>
@@ -872,19 +872,19 @@ const OrderAnalytics = ({ token }) => {
         <div className="flex flex-wrap justify-center gap-2 md:gap-4">
           <button
             onClick={exportToPDF}
-            className="px-4 py-2 md:px-5 md:py-2.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+            className="px-4 py-2 md:px-5 md:py-2.5 bg-indigo-600 text-white rounded-lg shadow hover:bg-black transition duration-500"
           >
             📄 Export to PDF
           </button>
           <button
             onClick={exportToExcel}
-            className="px-4 py-2 md:px-5 md:py-2.5 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition"
+            className="px-4 py-2 md:px-5 md:py-2.5 bg-indigo-600 text-white rounded-lg shadow hover:bg-black transition duration-500"
           >
             📊 Export to Excel
           </button>
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 md:px-5 md:py-2.5 bg-yellow-600 text-white rounded-lg shadow hover:bg-yellow-700 transition"
+            className="px-4 py-2 md:px-5 md:py-2.5 bg-indigo-600 text-white rounded-lg shadow hover:bg-black transition duration-500"
           >
             🗃 Export to CSV
           </button>
