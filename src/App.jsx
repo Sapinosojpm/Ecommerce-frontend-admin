@@ -44,7 +44,8 @@ import AdminChatPanel from './components/AdminChatPanel';
 import AdminReturns from './components/AdminReturns';
 import AboutPage from './components/AboutPageEditor';
 import ContactPage from './components/ContactPageEditor';
-
+import PopupManager from './components/PopupManager';
+import AdminLiveChat from './components/AdminLiveChat';
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = '₱';
 
@@ -89,7 +90,7 @@ const App = () => {
   };
 
   return (
-    <div className='min-h-screen bg-gray-50'>
+    <div className='min-h-screen bg-indigo-100'>
       <ToastContainer />
       {token === "" ? (
         <motion.div
@@ -142,6 +143,8 @@ const App = () => {
                   transition={{ duration: 0.4 }}
                 >
                   <Routes location={location} key={location.pathname}>
+                    <Route path='/admin-live-chat' element={<AdminLiveChat token={token} />} />
+                    <Route path='/popup' element={<PopupManager token={token} />} />
                     <Route path='/contact-page' element={<ContactPage token={token} />} />
                     <Route path='/about-page' element={<AboutPage token={token} />} />
                     <Route path='/return' element={<AdminReturns token={token} />} />

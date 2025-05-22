@@ -8,6 +8,8 @@ import LatestProductEditor from "./LatestProductEditor";
 import BestSellerEditor from "./BestSellerEditor";
 import PolicyEditor from "./PolicyEditor";
 import LogoEditor from "./LogoEditor";
+import AdsEditor from "./AdsEditor";
+import FooterSection from "./FooterSection";
 const componentEditors = {
   "Toggle Manager": null,
   "Logo": LogoEditor,
@@ -18,6 +20,8 @@ const componentEditors = {
   "Latest Product": LatestProductEditor,
   "Best Seller": BestSellerEditor,
   "Policy": PolicyEditor,
+  "Ads": AdsEditor,
+  "Footer": FooterSection,
   // Add more components here
 };
 

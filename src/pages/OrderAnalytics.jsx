@@ -10,6 +10,8 @@ import ViewersTracker from "../components/ViewersTracker";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Review from "../components/Review";
+
+import Plot from "react-plotly.js";
 const OrderAnalytics = ({ token }) => {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
@@ -31,19 +33,19 @@ const OrderAnalytics = ({ token }) => {
       daily: { sales: {}, capital: {}, profit: {}, vat: {} },
       weekly: { sales: {}, capital: {}, profit: {}, vat: {} },
       monthly: { sales: {}, capital: {}, profit: {}, vat: {} },
-      annually: { sales: {}, capital: {}, profit: {}, vat: {} }
+      annually: { sales: {}, capital: {}, profit: {}, vat: {} },
     },
     averageOrderValue: 0,
     customerMetrics: {
       repeatCustomers: 0,
       newCustomers: 0,
-      averagePurchaseFrequency: 0
-    }
+      averagePurchaseFrequency: 0,
+    },
   });
 
   const [timeRange, setTimeRange] = useState({
     startDate: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
-    endDate: new Date()
+    endDate: new Date(),
   });
   const [analysisLevel, setAnalysisLevel] = useState("monthly");
   const [csvUploading, setCsvUploading] = useState(false);
@@ -57,7 +59,7 @@ const OrderAnalytics = ({ token }) => {
 
   // Safe number formatting function
   const formatNumber = (num) => {
-    return num?.toLocaleString?.() ?? '0';
+    return num?.toLocaleString?.() ?? "0";
   };
 
   // Fetch orders from backend
@@ -75,10 +77,12 @@ const OrderAnalytics = ({ token }) => {
       );
 
       if (response.data.success) {
-        const filteredOrders = response.data.orders
-          ?.filter(order => {
+        const filteredOrders =
+          response.data.orders?.filter((order) => {
             const orderDate = new Date(order.date);
-            return orderDate >= timeRange.startDate && orderDate <= timeRange.endDate;
+            return (
+              orderDate >= timeRange.startDate && orderDate <= timeRange.endDate
+            );
           }) || [];
         setOrders(filteredOrders);
       } else {
@@ -86,46 +90,57 @@ const OrderAnalytics = ({ token }) => {
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
-      toast.error("Failed to fetch orders: " + (error.response?.data?.message || error.message));
+      toast.error(
+        "Failed to fetch orders: " +
+          (error.response?.data?.message || error.message)
+      );
     }
   };
 
   // Fetch products from backend
   const fetchProducts = async () => {
     if (!token) return;
-    
+
     try {
       const response = await axios.get(`${backendUrl}/api/product/list`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (response.data.success) {
         setProducts(response.data.products || []);
       }
     } catch (error) {
       console.error("Error fetching products:", error);
-      toast.error("Failed to fetch products: " + (error.response?.data?.message || error.message));
+      toast.error(
+        "Failed to fetch products: " +
+          (error.response?.data?.message || error.message)
+      );
     }
   };
 
   // Calculate analytics with time-based analysis
   const calculateAnalytics = () => {
     // Filter out cancelled orders
-    const validOrders = orders.filter(order => order.status !== "Canceled");
+    const validOrders = orders.filter((order) => order.status !== "Canceled");
     const cancelledOrders = orders.length - validOrders.length;
 
     // Identify low stock products (quantity < 10)
-    const lowStockProducts = products.filter(product => {
-      const totalQuantity = product.variations?.reduce((sum, variation) => {
-        return sum + variation.options?.reduce((optSum, option) => {
-          return optSum + (option.quantity || 0);
-        }, 0);
-      }, 0) || product.quantity || 0;
+    const lowStockProducts = products.filter((product) => {
+      const totalQuantity =
+        product.variations?.reduce((sum, variation) => {
+          return (
+            sum +
+            variation.options?.reduce((optSum, option) => {
+              return optSum + (option.quantity || 0);
+            }, 0)
+          );
+        }, 0) ||
+        product.quantity ||
+        0;
       return totalQuantity < 10;
     });
 
     if (!validOrders || validOrders.length === 0) {
-
       setAnalytics({
         totalSales: 0,
         totalCapital: 0,
@@ -145,19 +160,17 @@ const OrderAnalytics = ({ token }) => {
           daily: { sales: {}, capital: {}, profit: {}, vat: {} },
           weekly: { sales: {}, capital: {}, profit: {}, vat: {} },
           monthly: { sales: {}, capital: {}, profit: {}, vat: {} },
-          annually: { sales: {}, capital: {}, profit: {}, vat: {} }
+          annually: { sales: {}, capital: {}, profit: {}, vat: {} },
         },
         averageOrderValue: 0,
         customerMetrics: {
           repeatCustomers: 0,
           newCustomers: 0,
-          averagePurchaseFrequency: 0
-        }
-        
+          averagePurchaseFrequency: 0,
+        },
       });
-      
+
       return;
-      
     }
 
     let totalSales = 0;
@@ -173,7 +186,7 @@ const OrderAnalytics = ({ token }) => {
       daily: { sales: {}, capital: {}, profit: {}, vat: {} },
       weekly: { sales: {}, capital: {}, profit: {}, vat: {} },
       monthly: { sales: {}, capital: {}, profit: {}, vat: {} },
-      annually: { sales: {}, capital: {}, profit: {}, vat: {} }
+      annually: { sales: {}, capital: {}, profit: {}, vat: {} },
     };
 
     const customerOrders = {};
@@ -183,13 +196,15 @@ const OrderAnalytics = ({ token }) => {
       if (!order) return;
 
       // Order status count
-      orderStatusDistribution[order.status] = (orderStatusDistribution[order.status] || 0) + 1;
+      orderStatusDistribution[order.status] =
+        (orderStatusDistribution[order.status] || 0) + 1;
 
       // Product sales count
       if (Array.isArray(order.items)) {
         order.items.forEach((item) => {
           if (item && item.name) {
-            topProducts[item.name] = (topProducts[item.name] || 0) + (item.quantity || 0);
+            topProducts[item.name] =
+              (topProducts[item.name] || 0) + (item.quantity || 0);
           }
         });
       }
@@ -203,26 +218,27 @@ const OrderAnalytics = ({ token }) => {
       totalSales += orderAmount;
 
       if (Array.isArray(order.items)) {
-        order.items.forEach(item => {
+        order.items.forEach((item) => {
           const itemVariationAdjustment = item.variationAdjustment || 0;
           const itemCapital = item.capital || 0;
           const itemAdditionalCapital = item.additionalCapital?.value || 0;
-        
+
           const quantity = item.quantity || 0;
-          
+
           orderCapital += itemCapital * quantity;
           orderAdditionalCapital += itemAdditionalCapital * quantity;
           orderVariationAdjustment += itemVariationAdjustment * quantity;
           // Calculate VAT for this item (as percentage of item price)
-          const itemPrice = item.price  || 0;
+          const itemPrice = item.price || 0;
           const itemVATRate = (item.vat || 0) / 100;
-          orderVAT += (itemPrice * quantity * itemVATRate);
+          orderVAT += itemPrice * quantity * itemVATRate;
         });
       }
       console.log("orderVariationAdjustment: ", orderVariationAdjustment);
 
       totalCapital += orderCapital;
-      totalAdditionalCapital += orderAdditionalCapital + orderVariationAdjustment;
+      totalAdditionalCapital +=
+        orderAdditionalCapital + orderVariationAdjustment;
       totalVAT += orderVAT;
       totalVariationAdjustment += orderVariationAdjustment;
 
@@ -234,33 +250,56 @@ const OrderAnalytics = ({ token }) => {
       if (isNaN(orderDate)) return;
 
       // Daily analysis (YYYY-MM-DD)
-      const dayKey = orderDate.toISOString().split('T')[0];
-      timeBasedAnalysis.daily.sales[dayKey] = (timeBasedAnalysis.daily.sales[dayKey] || 0) + orderAmount;
-      timeBasedAnalysis.daily.capital[dayKey] = (timeBasedAnalysis.daily.capital[dayKey] || 0) + orderCombinedCapital;
-      timeBasedAnalysis.daily.profit[dayKey] = (timeBasedAnalysis.daily.profit[dayKey] || 0) + orderProfit;
-      timeBasedAnalysis.daily.vat[dayKey] = (timeBasedAnalysis.daily.vat[dayKey] || 0) + orderVAT;
+      const dayKey = orderDate.toISOString().split("T")[0];
+      timeBasedAnalysis.daily.sales[dayKey] =
+        (timeBasedAnalysis.daily.sales[dayKey] || 0) + orderAmount;
+      timeBasedAnalysis.daily.capital[dayKey] =
+        (timeBasedAnalysis.daily.capital[dayKey] || 0) + orderCombinedCapital;
+      timeBasedAnalysis.daily.profit[dayKey] =
+        (timeBasedAnalysis.daily.profit[dayKey] || 0) + orderProfit;
+      timeBasedAnalysis.daily.vat[dayKey] =
+        (timeBasedAnalysis.daily.vat[dayKey] || 0) + orderVAT;
 
       // Weekly analysis (YYYY-WW)
       const weekNumber = getWeekNumber(orderDate);
-      const weekKey = `${orderDate.getFullYear()}-W${weekNumber.toString().padStart(2, '0')}`;
-      timeBasedAnalysis.weekly.sales[weekKey] = (timeBasedAnalysis.weekly.sales[weekKey] || 0) + orderAmount;
-      timeBasedAnalysis.weekly.capital[weekKey] = (timeBasedAnalysis.weekly.capital[weekKey] || 0) + orderCombinedCapital;
-      timeBasedAnalysis.weekly.profit[weekKey] = (timeBasedAnalysis.weekly.profit[weekKey] || 0) + orderProfit;
-      timeBasedAnalysis.weekly.vat[weekKey] = (timeBasedAnalysis.weekly.vat[weekKey] || 0) + orderVAT;
+      const weekKey = `${orderDate.getFullYear()}-W${weekNumber
+        .toString()
+        .padStart(2, "0")}`;
+      timeBasedAnalysis.weekly.sales[weekKey] =
+        (timeBasedAnalysis.weekly.sales[weekKey] || 0) + orderAmount;
+      timeBasedAnalysis.weekly.capital[weekKey] =
+        (timeBasedAnalysis.weekly.capital[weekKey] || 0) + orderCombinedCapital;
+      timeBasedAnalysis.weekly.profit[weekKey] =
+        (timeBasedAnalysis.weekly.profit[weekKey] || 0) + orderProfit;
+      timeBasedAnalysis.weekly.vat[weekKey] =
+        (timeBasedAnalysis.weekly.vat[weekKey] || 0) + orderVAT;
 
       // Monthly analysis (YYYY-MM)
-      const monthKey = orderDate.toLocaleString('default', { year: 'numeric', month: 'long' });
-      timeBasedAnalysis.monthly.sales[monthKey] = (timeBasedAnalysis.monthly.sales[monthKey] || 0) + orderAmount;
-      timeBasedAnalysis.monthly.capital[monthKey] = (timeBasedAnalysis.monthly.capital[monthKey] || 0) + orderCombinedCapital;
-      timeBasedAnalysis.monthly.profit[monthKey] = (timeBasedAnalysis.monthly.profit[monthKey] || 0) + orderProfit;
-      timeBasedAnalysis.monthly.vat[monthKey] = (timeBasedAnalysis.monthly.vat[monthKey] || 0) + orderVAT;
+      const monthKey = orderDate.toLocaleString("default", {
+        year: "numeric",
+        month: "long",
+      });
+      timeBasedAnalysis.monthly.sales[monthKey] =
+        (timeBasedAnalysis.monthly.sales[monthKey] || 0) + orderAmount;
+      timeBasedAnalysis.monthly.capital[monthKey] =
+        (timeBasedAnalysis.monthly.capital[monthKey] || 0) +
+        orderCombinedCapital;
+      timeBasedAnalysis.monthly.profit[monthKey] =
+        (timeBasedAnalysis.monthly.profit[monthKey] || 0) + orderProfit;
+      timeBasedAnalysis.monthly.vat[monthKey] =
+        (timeBasedAnalysis.monthly.vat[monthKey] || 0) + orderVAT;
 
       // Annual analysis (YYYY)
       const yearKey = orderDate.getFullYear().toString();
-      timeBasedAnalysis.annually.sales[yearKey] = (timeBasedAnalysis.annually.sales[yearKey] || 0) + orderAmount;
-      timeBasedAnalysis.annually.capital[yearKey] = (timeBasedAnalysis.annually.capital[yearKey] || 0) + orderCombinedCapital;
-      timeBasedAnalysis.annually.profit[yearKey] = (timeBasedAnalysis.annually.profit[yearKey] || 0) + orderProfit;
-      timeBasedAnalysis.annually.vat[yearKey] = (timeBasedAnalysis.annually.vat[yearKey] || 0) + orderVAT;
+      timeBasedAnalysis.annually.sales[yearKey] =
+        (timeBasedAnalysis.annually.sales[yearKey] || 0) + orderAmount;
+      timeBasedAnalysis.annually.capital[yearKey] =
+        (timeBasedAnalysis.annually.capital[yearKey] || 0) +
+        orderCombinedCapital;
+      timeBasedAnalysis.annually.profit[yearKey] =
+        (timeBasedAnalysis.annually.profit[yearKey] || 0) + orderProfit;
+      timeBasedAnalysis.annually.vat[yearKey] =
+        (timeBasedAnalysis.annually.vat[yearKey] || 0) + orderVAT;
 
       // Customer metrics
       if (order.userId) {
@@ -273,19 +312,19 @@ const OrderAnalytics = ({ token }) => {
 
     // Calculate customer metrics
     const customerCount = Object.keys(customerOrders).length;
-    const repeatCustomers = Object.values(customerOrders).filter(count => count > 1).length;
+    const repeatCustomers = Object.values(customerOrders).filter(
+      (count) => count > 1
+    ).length;
     const newCustomers = customerCount - repeatCustomers;
-    const averagePurchaseFrequency = customerCount > 0 
-      ? totalOrders / customerCount 
-      : 0;
+    const averagePurchaseFrequency =
+      customerCount > 0 ? totalOrders / customerCount : 0;
 
-    const totalCombinedCapital = totalCapital ;
-    const totalProfit = totalAdditionalCapital + totalVariationAdjustment ;
+    const totalCombinedCapital = totalCapital;
+    const totalProfit = totalAdditionalCapital + totalVariationAdjustment;
     console.log("Total Profit: ", totalProfit);
     const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-    const vatPercentage = totalCapital > 0 
-      ? (totalVAT / totalCapital) * 100 
-      : 0;
+    const vatPercentage =
+      totalCapital > 0 ? (totalVAT / totalCapital) * 100 : 0;
 
     setAnalytics({
       totalSales,
@@ -306,8 +345,8 @@ const OrderAnalytics = ({ token }) => {
       customerMetrics: {
         repeatCustomers,
         newCustomers,
-        averagePurchaseFrequency
-      }
+        averagePurchaseFrequency,
+      },
     });
   };
 
@@ -321,13 +360,13 @@ const OrderAnalytics = ({ token }) => {
   // Format time-based data for chart
   const formatTimeData = (data, level) => {
     const sortedEntries = Object.entries(data.sales).sort((a, b) => {
-      if (level === 'daily') return new Date(a[0]) - new Date(b[0]);
-      if (level === 'weekly') {
-        const [aYear, aWeek] = a[0].split('-W');
-        const [bYear, bWeek] = b[0].split('-W');
+      if (level === "daily") return new Date(a[0]) - new Date(b[0]);
+      if (level === "weekly") {
+        const [aYear, aWeek] = a[0].split("-W");
+        const [bYear, bWeek] = b[0].split("-W");
         return aYear - bYear || aWeek - bWeek;
       }
-      if (level === 'monthly') {
+      if (level === "monthly") {
         const aDate = new Date(a[0]);
         const bDate = new Date(b[0]);
         return isNaN(aDate) || isNaN(bDate) ? 0 : aDate - bDate;
@@ -340,7 +379,7 @@ const OrderAnalytics = ({ token }) => {
       salesData: sortedEntries.map(([, value]) => value || 0),
       capitalData: sortedEntries.map(([key]) => data.capital[key] || 0),
       profitData: sortedEntries.map(([key]) => data.profit[key] || 0),
-      vatData: sortedEntries.map(([key]) => data.vat[key] || 0)
+      vatData: sortedEntries.map(([key]) => data.vat[key] || 0),
     };
   };
 
@@ -373,85 +412,115 @@ const OrderAnalytics = ({ token }) => {
         type: "pie",
         data: {
           labels: Object.keys(analytics.orderStatusDistribution),
-          datasets: [{
-            data: Object.values(analytics.orderStatusDistribution),
-            backgroundColor: ["#ff6384", "#36a2eb", "#ffcd56", "#4bc0c0", "#9966ff"],
-          }],
+          datasets: [
+            {
+              data: Object.values(analytics.orderStatusDistribution),
+              backgroundColor: [
+                "#ff6384",
+                "#36a2eb",
+                "#ffcd56",
+                "#4bc0c0",
+                "#9966ff",
+              ],
+            },
+          ],
         },
       });
     }
 
     // Top products chart
-    const productCtx = document.getElementById("productsChart")?.getContext("2d");
+    const productCtx = document
+      .getElementById("productsChart")
+      ?.getContext("2d");
     if (productCtx) {
       const topProducts = Object.entries(analytics.topProducts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
-      
+
       productChartRef.current = new Chart(productCtx, {
         type: "bar",
         data: {
           labels: topProducts.map(([name]) => name),
-          datasets: [{
-            label: "Quantity Sold",
-            data: topProducts.map(([, qty]) => qty),
-            backgroundColor: "#36a2eb",
-          }],
+          datasets: [
+            {
+              label: "Quantity Sold",
+              data: topProducts.map(([, qty]) => qty),
+              backgroundColor: "#36a2eb",
+            },
+          ],
         },
         options: {
           scales: {
             y: {
-              beginAtZero: true
-            }
-          }
-        }
+              beginAtZero: true,
+            },
+          },
+        },
       });
     }
 
     // Stock status chart
     const stockCtx = document.getElementById("stockChart")?.getContext("2d");
     if (stockCtx && analytics.lowStockProducts.length > 0) {
-      const stockData = analytics.lowStockProducts.map(product => {
-        const totalQuantity = product.variations?.reduce((sum, variation) => {
-          return sum + variation.options?.reduce((optSum, option) => {
-            return optSum + (option.quantity || 0);
-          }, 0);
-        }, 0) || product.quantity || 0;
-        return {
-          name: product.name,
-          quantity: totalQuantity
-        };
-      }).sort((a, b) => a.quantity - b.quantity).slice(0, 10);
+      const stockData = analytics.lowStockProducts
+        .map((product) => {
+          const totalQuantity =
+            product.variations?.reduce((sum, variation) => {
+              return (
+                sum +
+                variation.options?.reduce((optSum, option) => {
+                  return optSum + (option.quantity || 0);
+                }, 0)
+              );
+            }, 0) ||
+            product.quantity ||
+            0;
+          return {
+            name: product.name,
+            quantity: totalQuantity,
+          };
+        })
+        .sort((a, b) => a.quantity - b.quantity)
+        .slice(0, 10);
 
       stockChartRef.current = new Chart(stockCtx, {
         type: "bar",
         data: {
-          labels: stockData.map(product => product.name),
-          datasets: [{
-            label: "Remaining Quantity",
-            data: stockData.map(product => product.quantity),
-            backgroundColor: stockData.map(product => 
-              product.quantity < 5 ? '#ff6384' : 
-              product.quantity < 10 ? '#ffcd56' : 
-              '#4bc0c0'
-            ),
-          }],
+          labels: stockData.map((product) => product.name),
+          datasets: [
+            {
+              label: "Remaining Quantity",
+              data: stockData.map((product) => product.quantity),
+              backgroundColor: stockData.map((product) =>
+                product.quantity < 5
+                  ? "#ff6384"
+                  : product.quantity < 10
+                  ? "#ffcd56"
+                  : "#4bc0c0"
+              ),
+            },
+          ],
         },
         options: {
           scales: {
             y: {
-              beginAtZero: true
-            }
-          }
-        }
+              beginAtZero: true,
+            },
+          },
+        },
       });
     }
 
     // Time-based analysis chart
-    const timeAnalysisCtx = document.getElementById("timeAnalysisChart")?.getContext("2d");
+    const timeAnalysisCtx = document
+      .getElementById("timeAnalysisChart")
+      ?.getContext("2d");
     if (timeAnalysisCtx) {
-      const timeData = formatTimeData(analytics.timeBasedAnalysis[analysisLevel], analysisLevel);
-      
+      const timeData = formatTimeData(
+        analytics.timeBasedAnalysis[analysisLevel],
+        analysisLevel
+      );
+
       timeAnalysisChartRef.current = new Chart(timeAnalysisCtx, {
         type: "line",
         data: {
@@ -463,7 +532,7 @@ const OrderAnalytics = ({ token }) => {
               backgroundColor: "rgba(54, 162, 235, 0.2)",
               borderColor: "#36a2eb",
               fill: true,
-              tension: 0.1
+              tension: 0.1,
             },
             {
               label: "Capital",
@@ -471,7 +540,7 @@ const OrderAnalytics = ({ token }) => {
               backgroundColor: "rgba(255, 99, 132, 0.2)",
               borderColor: "#ff6384",
               fill: true,
-              tension: 0.1
+              tension: 0.1,
             },
             {
               label: "Profit",
@@ -479,7 +548,7 @@ const OrderAnalytics = ({ token }) => {
               backgroundColor: "rgba(75, 192, 192, 0.2)",
               borderColor: "#4bc0c0",
               fill: true,
-              tension: 0.1
+              tension: 0.1,
             },
             {
               label: "VAT",
@@ -487,60 +556,70 @@ const OrderAnalytics = ({ token }) => {
               backgroundColor: "rgba(153, 102, 255, 0.2)",
               borderColor: "#9966ff",
               fill: true,
-              tension: 0.1
-            }
+              tension: 0.1,
+            },
           ],
         },
         options: {
           plugins: {
             tooltip: {
               callbacks: {
-                label: function(context) {
-                  let label = context.dataset.label || '';
+                label: function (context) {
+                  let label = context.dataset.label || "";
                   if (label) {
-                    label += ': ';
+                    label += ": ";
                   }
                   if (context.parsed.y !== null) {
-                    label += currency + (context.parsed.y?.toLocaleString?.() ?? '0');
+                    label +=
+                      currency + (context.parsed.y?.toLocaleString?.() ?? "0");
                   }
                   return label;
                 },
-                footer: function(tooltipItems) {
+                footer: function (tooltipItems) {
                   if (tooltipItems.length > 1) {
-                    const sales = tooltipItems.find(i => i.datasetIndex === 0)?.parsed.y || 0;
-                    const capital = tooltipItems.find(i => i.datasetIndex === 1)?.parsed.y || 0;
-                    const profit = tooltipItems.find(i => i.datasetIndex === 2)?.parsed.y || 0;
-                    const vat = tooltipItems.find(i => i.datasetIndex === 3)?.parsed.y || 0;
-                    
-                    const margin = sales > 0 ? (profit / sales * 100).toFixed(2) : 0;
-                    const vatRate = sales > 0 ? (vat / sales * 100).toFixed(2) : 0;
-                    
-                    return [
-                      `Margin: ${margin}%`,
-                      `VAT Rate: ${vatRate}%`
-                    ];
+                    const sales =
+                      tooltipItems.find((i) => i.datasetIndex === 0)?.parsed
+                        .y || 0;
+                    const capital =
+                      tooltipItems.find((i) => i.datasetIndex === 1)?.parsed
+                        .y || 0;
+                    const profit =
+                      tooltipItems.find((i) => i.datasetIndex === 2)?.parsed
+                        .y || 0;
+                    const vat =
+                      tooltipItems.find((i) => i.datasetIndex === 3)?.parsed
+                        .y || 0;
+
+                    const margin =
+                      sales > 0 ? ((profit / sales) * 100).toFixed(2) : 0;
+                    const vatRate =
+                      sales > 0 ? ((vat / sales) * 100).toFixed(2) : 0;
+
+                    return [`Margin: ${margin}%`, `VAT Rate: ${vatRate}%`];
                   }
-                  return '';
-                }
-              }
-            }
+                  return "";
+                },
+              },
+            },
           },
           scales: {
             x: {
               title: {
                 display: true,
-                text: analysisLevel.charAt(0).toUpperCase() + analysisLevel.slice(1)
-              }
+                text:
+                  analysisLevel.charAt(0).toUpperCase() +
+                  analysisLevel.slice(1),
+              },
             },
             y: {
               title: {
                 display: true,
-                text: "Amount"
+                text: "Amount",
               },
-              beginAtZero: true
-            }
-          }
-        }
+              beginAtZero: true,
+            },
+          },
+        },
       });
     }
   }, [analytics, analysisLevel]);
@@ -556,16 +635,37 @@ const OrderAnalytics = ({ token }) => {
       head: [["Metric", "Value"]],
       body: [
         ["Total Sales", `${currency}${formatNumber(analytics.totalSales)}`],
-        ["Total Capital", `${currency}${formatNumber(analytics.totalCombinedCapital)}`],
-        ["  - Base Capital", `${currency}${formatNumber(analytics.totalCapital)}`],
-        ["  - Additional Capital", `${currency}${formatNumber(analytics.totalAdditionalCapital)}`],
+        [
+          "Total Capital",
+          `${currency}${formatNumber(analytics.totalCombinedCapital)}`,
+        ],
+        [
+          "  - Base Capital",
+          `${currency}${formatNumber(analytics.totalCapital)}`,
+        ],
+        [
+          "  - Additional Capital",
+          `${currency}${formatNumber(analytics.totalAdditionalCapital)}`,
+        ],
         ["Total Profit", `${currency}${formatNumber(analytics.totalProfit)}`],
-        ["Profit Margin", `${(analytics.totalSales > 0 ? (analytics.totalProfit / analytics.totalSales * 100) : 0).toFixed(2)}%`],
+        [
+          "Profit Margin",
+          `${(analytics.totalSales > 0
+            ? (analytics.totalProfit / analytics.totalSales) * 100
+            : 0
+          ).toFixed(2)}%`,
+        ],
         ["Total VAT", `${currency}${formatNumber(analytics.totalVAT)}`],
         ["VAT Percentage", `${analytics.vatPercentage.toFixed(2)}%`],
         ["Total Orders", formatNumber(analytics.totalOrders)],
-        ["Average Order Value", `${currency}${(analytics.averageOrderValue || 0).toFixed(2)}`],
-        ["Repeat Customers", formatNumber(analytics.customerMetrics.repeatCustomers)],
+        [
+          "Average Order Value",
+          `${currency}${(analytics.averageOrderValue || 0).toFixed(2)}`,
+        ],
+        [
+          "Repeat Customers",
+          formatNumber(analytics.customerMetrics.repeatCustomers),
+        ],
       ],
     });
 
@@ -573,19 +673,31 @@ const OrderAnalytics = ({ token }) => {
     doc.autoTable({
       startY: doc.lastAutoTable.finalY + 10,
       head: [["Order Status", "Count"]],
-      body: Object.entries(analytics.orderStatusDistribution).map(([status, count]) => [status, formatNumber(count)]),
+      body: Object.entries(analytics.orderStatusDistribution).map(
+        ([status, count]) => [status, formatNumber(count)]
+      ),
     });
 
     // Time-based Analysis Table
     doc.autoTable({
       startY: doc.lastAutoTable.finalY + 10,
-      head: [[`Time Period (${analysisLevel})`, "Sales", "Capital", "Profit", "VAT"]],
-      body: Object.entries(analytics.timeBasedAnalysis[analysisLevel].sales).map(([period, sales]) => [
+      head: [
+        [`Time Period (${analysisLevel})`, "Sales", "Capital", "Profit", "VAT"],
+      ],
+      body: Object.entries(
+        analytics.timeBasedAnalysis[analysisLevel].sales
+      ).map(([period, sales]) => [
         period,
         `${currency}${formatNumber(sales)}`,
-        `${currency}${formatNumber(analytics.timeBasedAnalysis[analysisLevel].capital[period] || 0)}`,
-        `${currency}${formatNumber(analytics.timeBasedAnalysis[analysisLevel].profit[period] || 0)}`,
-        `${currency}${formatNumber(analytics.timeBasedAnalysis[analysisLevel].vat[period] || 0)}`
+        `${currency}${formatNumber(
+          analytics.timeBasedAnalysis[analysisLevel].capital[period] || 0
+        )}`,
+        `${currency}${formatNumber(
+          analytics.timeBasedAnalysis[analysisLevel].profit[period] || 0
+        )}`,
+        `${currency}${formatNumber(
+          analytics.timeBasedAnalysis[analysisLevel].vat[period] || 0
+        )}`,
       ]),
     });
 
@@ -605,16 +717,22 @@ const OrderAnalytics = ({ token }) => {
         startY: doc.lastAutoTable.finalY + 10,
         head: [["Product Name", "Remaining Quantity", "Status"]],
         body: analytics.lowStockProducts
-          .map(product => {
-            const totalQuantity = product.variations?.reduce((sum, variation) => {
-              return sum + variation.options?.reduce((optSum, option) => {
-                return optSum + (option.quantity || 0);
-              }, 0);
-            }, 0) || product.quantity || 0;
+          .map((product) => {
+            const totalQuantity =
+              product.variations?.reduce((sum, variation) => {
+                return (
+                  sum +
+                  variation.options?.reduce((optSum, option) => {
+                    return optSum + (option.quantity || 0);
+                  }, 0)
+                );
+              }, 0) ||
+              product.quantity ||
+              0;
             return [
               product.name,
               formatNumber(totalQuantity),
-              totalQuantity < 5 ? 'Critical' : 'Low'
+              totalQuantity < 5 ? "Critical" : "Low",
             ];
           })
           .sort((a, b) => a[1] - b[1]),
@@ -627,65 +745,103 @@ const OrderAnalytics = ({ token }) => {
   // Export to Excel
   const exportToExcel = () => {
     // Create worksheets
-    const orderWorksheet = XLSX.utils.json_to_sheet(orders.map(order => {
-      const orderCapital = order.items?.reduce?.((sum, item) => 
-        sum + (item.capital || 0) * (item.quantity || 0), 0) || 0;
-      const orderAdditionalCapital = order.items?.reduce?.((sum, item) => 
-        sum + (item.additionalCapital || 0) * (item.quantity || 0), 0) || 0;
-      const orderCombinedCapital = orderCapital + orderAdditionalCapital;
-      const orderProfit = (order.amount || 0) - orderCombinedCapital;
-      const orderVAT = order.items?.reduce?.((sum, item) => {
-        const itemPrice = item.price || 0;
-        const itemVATRate = (item.vat || 0) / 100;
-        const quantity = item.quantity || 0;
-        return sum + (itemPrice * quantity * itemVATRate);
-      }, 0) || 0;
-      
-      return {
-        "Order ID": order.id || '',
-        "Customer Name": order.customerName || 'Unknown',
-        "Product Name": order.items?.map?.(item => item.name).join(", ") || '',
-        "Quantity": order.items?.reduce?.((sum, item) => sum + (item.quantity || 0), 0) || 0,
-        "Price": order.amount || 0,
-        "Base Capital": orderCapital,
-        "Additional Capital": orderAdditionalCapital,
-        "Total Capital": orderCombinedCapital,
-        "Profit": orderProfit,
-        "Profit Margin": order.amount > 0 ? `${(orderProfit / order.amount * 100).toFixed(2)}%` : "0%",
-        "VAT Amount": orderVAT,
-        "VAT Percentage": order.amount > 0 ? `${(orderVAT / order.amount * 100).toFixed(2)}%` : "0%",
-        "Status": order.status || 'Unknown',
-        "Date Ordered": order.date ? new Date(order.date).toLocaleDateString() : 'Unknown',
-      };
-    }));
+    const orderWorksheet = XLSX.utils.json_to_sheet(
+      orders.map((order) => {
+        const orderCapital =
+          order.items?.reduce?.(
+            (sum, item) => sum + (item.capital || 0) * (item.quantity || 0),
+            0
+          ) || 0;
+        const orderAdditionalCapital =
+          order.items?.reduce?.(
+            (sum, item) =>
+              sum + (item.additionalCapital || 0) * (item.quantity || 0),
+            0
+          ) || 0;
+        const orderCombinedCapital = orderCapital + orderAdditionalCapital;
+        const orderProfit = (order.amount || 0) - orderCombinedCapital;
+        const orderVAT =
+          order.items?.reduce?.((sum, item) => {
+            const itemPrice = item.price || 0;
+            const itemVATRate = (item.vat || 0) / 100;
+            const quantity = item.quantity || 0;
+            return sum + itemPrice * quantity * itemVATRate;
+          }, 0) || 0;
 
-    const analyticsWorksheet = XLSX.utils.json_to_sheet([{
-      "Total Sales": analytics.totalSales,
-      "Total Capital": analytics.totalCombinedCapital,
-      "Base Capital": analytics.totalCapital,
-      "Additional Capital": analytics.totalAdditionalCapital,
-      "Total Profit": analytics.totalProfit,
-      "Profit Margin": analytics.totalSales > 0 ? `${(analytics.totalProfit / analytics.totalSales * 100).toFixed(2)}%` : "0%",
-      "Total VAT": analytics.totalVAT,
-      "VAT Percentage": analytics.vatPercentage.toFixed(2) + "%",
-      "Total Orders": analytics.totalOrders,
-      "Average Order Value": analytics.averageOrderValue,
-      "Repeat Customers": analytics.customerMetrics.repeatCustomers,
-      "New Customers": analytics.customerMetrics.newCustomers
-    }]);
+        return {
+          "Order ID": order.id || "",
+          "Customer Name": order.customerName || "Unknown",
+          "Product Name":
+            order.items?.map?.((item) => item.name).join(", ") || "",
+          Quantity:
+            order.items?.reduce?.(
+              (sum, item) => sum + (item.quantity || 0),
+              0
+            ) || 0,
+          Price: order.amount || 0,
+          "Base Capital": orderCapital,
+          "Additional Capital": orderAdditionalCapital,
+          "Total Capital": orderCombinedCapital,
+          Profit: orderProfit,
+          "Profit Margin":
+            order.amount > 0
+              ? `${((orderProfit / order.amount) * 100).toFixed(2)}%`
+              : "0%",
+          "VAT Amount": orderVAT,
+          "VAT Percentage":
+            order.amount > 0
+              ? `${((orderVAT / order.amount) * 100).toFixed(2)}%`
+              : "0%",
+          Status: order.status || "Unknown",
+          "Date Ordered": order.date
+            ? new Date(order.date).toLocaleDateString()
+            : "Unknown",
+        };
+      })
+    );
 
-    const lowStockWorksheet = XLSX.utils.json_to_sheet(analytics.lowStockProducts.map(product => {
-      const totalQuantity = product.variations?.reduce((sum, variation) => {
-        return sum + variation.options?.reduce((optSum, option) => {
-          return optSum + (option.quantity || 0);
-        }, 0);
-      }, 0) || product.quantity || 0;
-      return {
-        "Product Name": product.name,
-        "Remaining Quantity": totalQuantity,
-        "Status": totalQuantity < 5 ? 'Critical' : 'Low'
-      };
-    }));
+    const analyticsWorksheet = XLSX.utils.json_to_sheet([
+      {
+        "Total Sales": analytics.totalSales,
+        "Total Capital": analytics.totalCombinedCapital,
+        "Base Capital": analytics.totalCapital,
+        "Additional Capital": analytics.totalAdditionalCapital,
+        "Total Profit": analytics.totalProfit,
+        "Profit Margin":
+          analytics.totalSales > 0
+            ? `${((analytics.totalProfit / analytics.totalSales) * 100).toFixed(
+                2
+              )}%`
+            : "0%",
+        "Total VAT": analytics.totalVAT,
+        "VAT Percentage": analytics.vatPercentage.toFixed(2) + "%",
+        "Total Orders": analytics.totalOrders,
+        "Average Order Value": analytics.averageOrderValue,
+        "Repeat Customers": analytics.customerMetrics.repeatCustomers,
+        "New Customers": analytics.customerMetrics.newCustomers,
+      },
+    ]);
+
+    const lowStockWorksheet = XLSX.utils.json_to_sheet(
+      analytics.lowStockProducts.map((product) => {
+        const totalQuantity =
+          product.variations?.reduce((sum, variation) => {
+            return (
+              sum +
+              variation.options?.reduce((optSum, option) => {
+                return optSum + (option.quantity || 0);
+              }, 0)
+            );
+          }, 0) ||
+          product.quantity ||
+          0;
+        return {
+          "Product Name": product.name,
+          "Remaining Quantity": totalQuantity,
+          Status: totalQuantity < 5 ? "Critical" : "Low",
+        };
+      })
+    );
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, orderWorksheet, "Orders");
@@ -709,25 +865,29 @@ const OrderAnalytics = ({ token }) => {
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
         // Convert Excel data to match order schema
-        const importedOrders = jsonData.map(row => ({
+        const importedOrders = jsonData.map((row) => ({
           userId: row["User ID"] || "default-user-id",
           customerName: row["Customer Name"] || "Unknown",
-          items: row["Product Name"] 
-            ? row["Product Name"].split(", ").map(name => ({ 
-                name, 
+          items: row["Product Name"]
+            ? row["Product Name"].split(", ").map((name) => ({
+                name,
                 quantity: row["Quantity"] || 1,
                 price: row["Price"] || 0,
                 capital: row["Capital"] || 0,
                 additionalCapital: row["Additional Capital"] || 0,
-                vat: row["VAT Percentage"] || 0
+                vat: row["VAT Percentage"] || 0,
               }))
             : [],
           amount: Number(row["Price"] || 0),
           status: row["Status"] || "Order Placed",
-          date: row["Date Ordered"] ? new Date(row["Date Ordered"]).getTime() : Date.now(),
+          date: row["Date Ordered"]
+            ? new Date(row["Date Ordered"]).getTime()
+            : Date.now(),
           address: row["Address"] || "Unknown Address",
           paymentMethod: row["Payment Method"] || "Unknown",
-          payment: row["Payment Status"] ? row["Payment Status"] === "Paid" : false,
+          payment: row["Payment Status"]
+            ? row["Payment Status"] === "Paid"
+            : false,
         }));
 
         saveImportedOrders(importedOrders);
@@ -761,7 +921,10 @@ const OrderAnalytics = ({ token }) => {
       }
     } catch (error) {
       console.error("Error saving orders:", error);
-      toast.error("Failed to import orders: " + (error.response?.data?.message || error.message));
+      toast.error(
+        "Failed to import orders: " +
+          (error.response?.data?.message || error.message)
+      );
     } finally {
       setCsvUploading(false);
     }
@@ -770,34 +933,53 @@ const OrderAnalytics = ({ token }) => {
   // Export to CSV
   const exportToCSV = () => {
     const csvData = orders.map((order) => {
-      const orderCapital = order.items?.reduce?.((sum, item) => 
-        sum + (item.capital || 0) * (item.quantity || 0), 0) || 0;
-      const orderAdditionalCapital = order.items?.reduce?.((sum, item) => 
-        sum + (item.additionalCapital || 0) * (item.quantity || 0), 0) || 0;
+      const orderCapital =
+        order.items?.reduce?.(
+          (sum, item) => sum + (item.capital || 0) * (item.quantity || 0),
+          0
+        ) || 0;
+      const orderAdditionalCapital =
+        order.items?.reduce?.(
+          (sum, item) =>
+            sum + (item.additionalCapital || 0) * (item.quantity || 0),
+          0
+        ) || 0;
       const orderCombinedCapital = orderCapital + orderAdditionalCapital;
       const orderProfit = (order.amount || 0) - orderCombinedCapital;
-      const orderVAT = order.items?.reduce?.((sum, item) => {
-        const itemPrice = item.price || 0;
-        const itemVATRate = (item.vat || 0) / 100;
-        const quantity = item.quantity || 0;
-        return sum + (itemPrice * quantity * itemVATRate);
-      }, 0) || 0;
-      
+      const orderVAT =
+        order.items?.reduce?.((sum, item) => {
+          const itemPrice = item.price || 0;
+          const itemVATRate = (item.vat || 0) / 100;
+          const quantity = item.quantity || 0;
+          return sum + itemPrice * quantity * itemVATRate;
+        }, 0) || 0;
+
       return {
-        "Order ID": order.id || '',
-        "Customer Name": order.customerName || 'Unknown',
-        "Product Name": order.items?.map?.(item => item.name).join(", ") || '',
-        "Quantity": order.items?.reduce?.((sum, item) => sum + (item.quantity || 0), 0) || 0,
-        "Price": order.amount || 0,
+        "Order ID": order.id || "",
+        "Customer Name": order.customerName || "Unknown",
+        "Product Name":
+          order.items?.map?.((item) => item.name).join(", ") || "",
+        Quantity:
+          order.items?.reduce?.((sum, item) => sum + (item.quantity || 0), 0) ||
+          0,
+        Price: order.amount || 0,
         "Base Capital": orderCapital,
         "Additional Capital": orderAdditionalCapital,
         "Total Capital": orderCombinedCapital,
-        "Profit": orderProfit,
-        "Profit Margin": order.amount > 0 ? `${(orderProfit / order.amount * 100).toFixed(2)}%` : "0%",
+        Profit: orderProfit,
+        "Profit Margin":
+          order.amount > 0
+            ? `${((orderProfit / order.amount) * 100).toFixed(2)}%`
+            : "0%",
         "VAT Amount": orderVAT,
-        "VAT Percentage": order.amount > 0 ? `${(orderVAT / order.amount * 100).toFixed(2)}%` : "0%",
-        "Status": order.status || 'Unknown',
-        "Date Ordered": order.date ? new Date(order.date).toLocaleDateString() : 'Unknown',
+        "VAT Percentage":
+          order.amount > 0
+            ? `${((orderVAT / order.amount) * 100).toFixed(2)}%`
+            : "0%",
+        Status: order.status || "Unknown",
+        "Date Ordered": order.date
+          ? new Date(order.date).toLocaleDateString()
+          : "Unknown",
       };
     });
 
@@ -816,7 +998,37 @@ const OrderAnalytics = ({ token }) => {
 
   return (
     <div className="p-4 md:p-8 lg:p-10">
-      <h3 className="mb-6 text-2xl font-bold text-center md:text-3xl">Order Analytics</h3>
+      <h3 className="mb-6 text-[280%] font-bold text-center bg-indigo-600 text-white rounded-lg shadow-lg p-8">
+        Order Analytics
+      </h3>
+      {/* ......................................................................................................... */}
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 gap-6 mb-10 md:grid-cols-2">
+        {/* Sales Trend Chart */}
+        <div className="p-6 transition-shadow duration-300 bg-white shadow-md rounded-2xl hover:shadow-lg">
+          <div className="mb-5 text-center">
+            <h4 className="text-xl font-semibold text-gray-800 md:text-2xl">
+              Sales Trend{" "}
+              <span className="text-sm text-gray-500">({analysisLevel})</span>
+            </h4>
+          </div>
+          <canvas
+            id="timeAnalysisChart"
+            className="w-full aspect-[4/3]"
+          ></canvas>
+        </div>
+
+        {/* Order Status Chart */}
+        <div className="p-6 transition-shadow duration-300 bg-white shadow-md rounded-2xl hover:shadow-lg">
+          <div className="mb-5 text-center">
+            <h4 className="text-xl font-semibold text-gray-800 md:text-2xl">
+              Order Status
+            </h4>
+          </div>
+          <canvas id="statusChart" className="w-full aspect-[4/3]"></canvas>
+        </div>
+      </div>
+      {/* ......................................................................................................... */}
 
       {/* Time Range Selector */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 mb-6 bg-white rounded-lg shadow-md">
@@ -825,7 +1037,9 @@ const OrderAnalytics = ({ token }) => {
             <label className="block mb-1 text-sm font-medium">Start Date</label>
             <DatePicker
               selected={timeRange.startDate}
-              onChange={(date) => setTimeRange({...timeRange, startDate: date})}
+              onChange={(date) =>
+                setTimeRange({ ...timeRange, startDate: date })
+              }
               selectsStart
               startDate={timeRange.startDate}
               endDate={timeRange.endDate}
@@ -836,7 +1050,7 @@ const OrderAnalytics = ({ token }) => {
             <label className="block mb-1 text-sm font-medium">End Date</label>
             <DatePicker
               selected={timeRange.endDate}
-              onChange={(date) => setTimeRange({...timeRange, endDate: date})}
+              onChange={(date) => setTimeRange({ ...timeRange, endDate: date })}
               selectsEnd
               startDate={timeRange.startDate}
               endDate={timeRange.endDate}
@@ -844,7 +1058,7 @@ const OrderAnalytics = ({ token }) => {
               className="p-2 border rounded"
             />
           </div>
-          <button 
+          <button
             onClick={fetchAllOrders}
             className="self-end px-4 py-2 text-indigo-800 transition duration-500 bg-transparent border border-indigo-800 rounded hover:bg-indigo-600 hover:text-white"
           >
@@ -853,7 +1067,9 @@ const OrderAnalytics = ({ token }) => {
         </div>
 
         <div>
-          <label className="block mb-1 text-sm font-medium">Analysis Level</label>
+          <label className="block mb-1 text-sm font-medium">
+            Analysis Level
+          </label>
           <select
             value={analysisLevel}
             onChange={(e) => setAnalysisLevel(e.target.value)}
@@ -889,112 +1105,193 @@ const OrderAnalytics = ({ token }) => {
             🗃 Export to CSV
           </button>
         </div>
-        <label className={`px-4 py-2 md:px-5 md:py-2.5 ${csvUploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300'} text-gray-700 rounded-lg shadow cursor-pointer transition`}>
-          {csvUploading ? '⏳ Uploading...' : '📥 Import Excel'}
-          <input 
-            type="file" 
-            accept=".xlsx, .xls" 
-            className="hidden" 
-            onChange={importFromExcel} 
+        <label
+          className={`px-4 py-2 md:px-5 md:py-2.5 ${
+            csvUploading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gray-200 hover:bg-gray-300"
+          } text-gray-700 rounded-lg shadow cursor-pointer transition`}
+        >
+          {csvUploading ? "⏳ Uploading..." : "📥 Import Excel"}
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            className="hidden"
+            onChange={importFromExcel}
             disabled={csvUploading}
           />
         </label>
       </div>
 
       {/* Enhanced Summary Grid */}
-      <div className="grid grid-cols-1 gap-6 mb-10 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="p-6 text-center bg-gray-100 border rounded-lg shadow-lg">
-          <h4 className="mb-2 text-lg font-semibold md:text-xl">Total Sales</h4>
-          <p className="text-xl md:text-2xl">{currency}{formatNumber(analytics.totalSales)}</p>
-        </div>
-        {/* shipping fee */}
-        {/* <div className="p-6 text-center bg-gray-100 border rounded-lg shadow-lg">
-          <h4 className="mb-2 text-lg font-semibold md:text-xl">Total Shipping Fee</h4>
-          <p className="text-xl md:text-2xl">{currency}{formatNumber(analytics.totalSales - analytics.totalAdditionalCapital - analytics.totalCapital - analytics.totalVAT + analytics.totalVariationAdjustment )}</p>
-        </div> */}
+    <div className="grid grid-cols-1 gap-6 mb-10 sm:grid-cols-2 lg:grid-cols-4">
+  {/* Total Sales Card */}
+  <div className="relative p-6 overflow-hidden text-center transition-all duration-500 transform bg-gray-100 border rounded-lg shadow-lg cursor-pointer group hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/25 hover:bg-gradient-to-br hover:from-indigo-50 hover:via-white hover:to-indigo-100 hover:border-indigo-200 hover:rounded-xl">
+    <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-indigo-600/10 group-hover:opacity-100"></div>
+    <div className="absolute inset-0 transition-transform duration-700 ease-out translate-x-full bg-gradient-to-br from-transparent via-indigo-500/5 to-transparent group-hover:translate-x-0"></div>
+    <div className="absolute top-0 left-0 w-full h-1 transition-transform duration-500 origin-left transform scale-x-0 bg-gradient-to-r from-indigo-400 via-purple-500 to-indigo-600 group-hover:scale-x-100"></div>
+    <div className="relative z-10">
+      <h4 className="mb-2 text-lg font-semibold transition-colors duration-300 md:text-xl group-hover:text-indigo-700">
+        Total Sales
+      </h4>
+      <p className="text-xl transition-all duration-300 md:text-2xl group-hover:font-bold group-hover:bg-gradient-to-r group-hover:from-indigo-600 group-hover:to-purple-600 group-hover:bg-clip-text group-hover:text-transparent">
+        {currency}
+        {formatNumber(analytics.totalSales)}
+      </p>
+    </div>
+    <div className="absolute w-20 h-20 transition-all duration-500 rounded-full -top-2 -right-2 bg-gradient-to-br from-indigo-400/20 to-purple-400/20 blur-xl group-hover:blur-2xl"></div>
+  </div>
 
-        <div className="p-6 text-center bg-gray-100 border rounded-lg shadow-lg">
-          <h4 className="mb-2 text-lg font-semibold md:text-xl">Total Capital</h4>
-          <p className="text-xl md:text-2xl">{currency}{formatNumber(analytics.totalCombinedCapital)}</p>
-          {/* <p className="mt-1 text-sm text-gray-600">
-            (Base: {currency}{formatNumber(analytics.totalCapital)})
-          </p>
-          <p className="text-sm text-gray-600">
-            (Additional: {currency}{formatNumber(analytics.totalAdditionalCapital)})
-          </p> */}
-        </div>
-        <div className="p-6 text-center bg-gray-100 border rounded-lg shadow-lg">
-          <h4 className="mb-2 text-lg font-semibold md:text-xl">Total Profit</h4>
-          <p className="text-xl md:text-2xl">{currency}{formatNumber(analytics.totalProfit)}</p>
-          {/*<p className="mt-1 text-sm text-gray-600">
-            {analytics.totalSales > 0 ? 
-              `${(analytics.totalProfit / analytics.totalSales * 100).toFixed(2)}% margin` : 
-              '0% margin'}
-          </p>*/}
-        </div>
-        <div className="p-6 text-center bg-gray-100 border rounded-lg shadow-lg">
-          <h4 className="mb-2 text-lg font-semibold md:text-xl">Total Orders</h4>
-          <p className="text-xl md:text-2xl">{formatNumber(analytics.totalOrders)}</p>
-          <p className="mt-1 text-sm text-gray-600">
-            {formatNumber(analytics.customerMetrics.newCustomers)} new customers
-          </p>
-          <p className="text-sm text-gray-600">
-            {formatNumber(analytics.customerMetrics.repeatCustomers)} repeat customers
-          </p>
-        </div>
-        <div className="p-6 text-center bg-gray-100 border rounded-lg shadow-lg">
-          <h4 className="mb-2 text-lg font-semibold md:text-xl">Total VAT</h4>
-          <p className="text-xl md:text-2xl">{currency}{formatNumber(analytics.totalVAT)}</p>
-         {/* <p className="mt-1 text-sm text-gray-600">
-            {analytics.vatPercentage.toFixed(2)}% of sales
-          </p>*/}
-        </div>
-        <div className="p-6 text-center bg-gray-100 border rounded-lg shadow-lg">
-          <h4 className="mb-2 text-lg font-semibold md:text-xl">Low Stock Items</h4>
-          <p className="text-xl md:text-2xl">{analytics.lowStockProducts.length}</p>
-          <p className="mt-1 text-sm text-gray-600">
-            {
-              analytics.lowStockProducts.filter(p => {
-                let qty = 0;
-                if (p.variations?.length) {
-                  qty = p.variations.reduce((sum, v) => {
-                    return sum + (v.options?.reduce((s, o) => s + (o.quantity || 0), 0) || 0);
-                  }, 0);
-                } else {
-                  qty = p.quantity || 0;
-                }
-                return qty < 5;
-              }).length
-            } critical
-          </p>
+  {/* Total Capital Card */}
+  <div className="relative p-6 overflow-hidden text-center transition-all duration-500 transform bg-gray-100 border rounded-lg shadow-lg cursor-pointer group hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/25 hover:bg-gradient-to-br hover:from-indigo-50 hover:via-white hover:to-indigo-100 hover:border-indigo-200 hover:rounded-xl">
+    <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-indigo-600/10 group-hover:opacity-100"></div>
+    <div className="absolute inset-0 transition-transform duration-700 ease-out -translate-x-full bg-gradient-to-bl from-transparent via-indigo-500/5 to-transparent group-hover:translate-x-0"></div>
+    <div className="absolute top-0 left-0 w-full h-1 transition-transform duration-500 origin-right transform scale-x-0 bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-600 group-hover:scale-x-100"></div>
+    <div className="relative z-10">
+      <h4 className="mb-2 text-lg font-semibold transition-colors duration-300 md:text-xl group-hover:text-indigo-700">
+        Total Capital
+      </h4>
+      <p className="text-xl transition-all duration-300 md:text-2xl group-hover:font-bold group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-indigo-600 group-hover:bg-clip-text group-hover:text-transparent">
+        {currency}
+        {formatNumber(analytics.totalCombinedCapital)}
+      </p>
+    </div>
+    <div className="absolute w-16 h-16 transition-all duration-500 rounded-full -bottom-2 -left-2 bg-gradient-to-tr from-purple-400/20 to-indigo-400/20 blur-xl group-hover:blur-2xl"></div>
+  </div>
 
-        </div>
-      </div>
+  {/* Total Profit Card */}
+  <div className="relative p-6 overflow-hidden text-center transition-all duration-500 transform bg-gray-100 border rounded-lg shadow-lg cursor-pointer group hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/25 hover:bg-gradient-to-br hover:from-indigo-50 hover:via-white hover:to-indigo-100 hover:border-indigo-200 hover:rounded-xl">
+    <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-gradient-to-r from-emerald-600/10 via-indigo-600/10 to-emerald-600/10 group-hover:opacity-100"></div>
+    <div className="absolute inset-0 transition-transform duration-700 ease-out translate-y-full bg-gradient-to-tr from-transparent via-emerald-500/5 to-transparent group-hover:translate-y-0"></div>
+    <div className="absolute top-0 left-0 w-full h-1 transition-transform duration-500 origin-center transform scale-x-0 bg-gradient-to-r from-emerald-400 via-indigo-500 to-emerald-600 group-hover:scale-x-100"></div>
+    <div className="relative z-10">
+      <h4 className="mb-2 text-lg font-semibold transition-colors duration-300 md:text-xl group-hover:text-indigo-700">
+        Total Profit
+      </h4>
+      <p className="text-xl transition-all duration-300 md:text-2xl group-hover:font-bold group-hover:bg-gradient-to-r group-hover:from-emerald-600 group-hover:to-indigo-600 group-hover:bg-clip-text group-hover:text-transparent">
+        {currency}
+        {formatNumber(analytics.totalProfit)}
+      </p>
+    </div>
+    <div className="absolute w-24 h-24 transition-all duration-500 rounded-full top-1/2 -right-4 bg-gradient-to-bl from-emerald-400/15 to-indigo-400/15 blur-2xl group-hover:blur-3xl"></div>
+  </div>
+
+  {/* Total Orders Card */}
+  <div className="relative p-6 overflow-hidden text-center transition-all duration-500 transform bg-gray-100 border rounded-lg shadow-lg cursor-pointer group hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/25 hover:bg-gradient-to-br hover:from-indigo-50 hover:via-white hover:to-indigo-100 hover:border-indigo-200 hover:rounded-xl">
+    <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-gradient-to-r from-indigo-600/10 via-blue-600/10 to-indigo-600/10 group-hover:opacity-100"></div>
+    <div className="absolute inset-0 transition-transform duration-700 ease-out -translate-y-full bg-gradient-to-tl from-transparent via-blue-500/5 to-transparent group-hover:translate-y-0"></div>
+    <div className="absolute top-0 left-0 w-full h-1 transition-transform duration-500 origin-left transform scale-x-0 bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-600 group-hover:scale-x-100"></div>
+    <div className="relative z-10">
+      <h4 className="mb-2 text-lg font-semibold transition-colors duration-300 md:text-xl group-hover:text-indigo-700">
+        Total Orders
+      </h4>
+      <p className="text-xl transition-all duration-300 md:text-2xl group-hover:font-bold group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:bg-clip-text group-hover:text-transparent">
+        {formatNumber(analytics.totalOrders)}
+      </p>
+      <p className="mt-1 text-sm text-gray-600 transition-colors duration-300 group-hover:text-indigo-600">
+        {formatNumber(analytics.customerMetrics.newCustomers)} new customers
+      </p>
+      <p className="text-sm text-gray-600 transition-colors duration-300 group-hover:text-indigo-600">
+        {formatNumber(analytics.customerMetrics.repeatCustomers)} repeat customers
+      </p>
+    </div>
+    <div className="absolute w-20 h-20 transition-all duration-500 rounded-full -bottom-4 -right-2 bg-gradient-to-tl from-blue-400/20 to-indigo-400/20 blur-xl group-hover:blur-2xl"></div>
+  </div>
+
+  {/* Total VAT Card */}
+  <div className="relative p-6 overflow-hidden text-center transition-all duration-500 transform bg-gray-100 border rounded-lg shadow-lg cursor-pointer group hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/25 hover:bg-gradient-to-br hover:from-indigo-50 hover:via-white hover:to-indigo-100 hover:border-indigo-200 hover:rounded-xl">
+    <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-gradient-to-r from-violet-600/10 via-indigo-600/10 to-violet-600/10 group-hover:opacity-100"></div>
+    <div className="absolute inset-0 transition-transform duration-700 ease-out translate-x-full translate-y-full bg-gradient-to-br from-transparent via-violet-500/5 to-transparent group-hover:translate-x-0 group-hover:translate-y-0"></div>
+    <div className="absolute top-0 left-0 w-full h-1 transition-transform duration-500 origin-right transform scale-x-0 bg-gradient-to-r from-violet-400 via-indigo-500 to-violet-600 group-hover:scale-x-100"></div>
+    <div className="relative z-10">
+      <h4 className="mb-2 text-lg font-semibold transition-colors duration-300 md:text-xl group-hover:text-indigo-700">
+        Total VAT
+      </h4>
+      <p className="text-xl transition-all duration-300 md:text-2xl group-hover:font-bold group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-indigo-600 group-hover:bg-clip-text group-hover:text-transparent">
+        {currency}
+        {formatNumber(analytics.totalVAT)}
+      </p>
+    </div>
+    <div className="absolute transition-all duration-500 rounded-full top-1/4 -left-2 w-18 h-18 bg-gradient-to-br from-violet-400/20 to-indigo-400/20 blur-xl group-hover:blur-2xl"></div>
+  </div>
+
+  {/* Low Stock Items Card */}
+  <div className="relative p-6 overflow-hidden text-center transition-all duration-500 transform bg-gray-100 border rounded-lg shadow-lg cursor-pointer group hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/25 hover:bg-gradient-to-br hover:from-indigo-50 hover:via-white hover:to-indigo-100 hover:border-indigo-200 hover:rounded-xl">
+    <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-gradient-to-r from-rose-600/10 via-indigo-600/10 to-rose-600/10 group-hover:opacity-100"></div>
+    <div className="absolute inset-0 transition-transform duration-700 ease-out -translate-x-full -translate-y-full bg-gradient-to-bl from-transparent via-rose-500/5 to-transparent group-hover:translate-x-0 group-hover:translate-y-0"></div>
+    <div className="absolute top-0 left-0 w-full h-1 transition-transform duration-500 origin-center transform scale-x-0 bg-gradient-to-r from-rose-400 via-indigo-500 to-rose-600 group-hover:scale-x-100"></div>
+    <div className="relative z-10">
+      <h4 className="mb-2 text-lg font-semibold transition-colors duration-300 md:text-xl group-hover:text-indigo-700">
+        Low Stock Items
+      </h4>
+      <p className="text-xl transition-all duration-300 md:text-2xl group-hover:font-bold group-hover:bg-gradient-to-r group-hover:from-rose-600 group-hover:to-indigo-600 group-hover:bg-clip-text group-hover:text-transparent">
+        {analytics.lowStockProducts.length}
+      </p>
+      <p className="mt-1 text-sm text-gray-600 transition-colors duration-300 group-hover:text-indigo-600">
+        {
+          analytics.lowStockProducts.filter((p) => {
+            let qty = 0;
+            if (p.variations?.length) {
+              qty = p.variations.reduce((sum, v) => {
+                return (
+                  sum +
+                  (v.options?.reduce((s, o) => s + (o.quantity || 0), 0) ||
+                    0)
+                );
+              }, 0);
+            } else {
+              qty = p.quantity || 0;
+            }
+            return qty < 5;
+          }).length
+        }{" "}
+        critical
+      </p>
+    </div>
+    <div className="absolute transition-all duration-500 rounded-full bottom-1/4 -right-3 w-22 h-22 bg-gradient-to-tl from-rose-400/20 to-indigo-400/20 blur-xl group-hover:blur-2xl"></div>
+  </div>
+</div>
 
       {/* Capital Breakdown Section */}
       <div className="p-4 mb-6 bg-white rounded-lg shadow-lg">
-        <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">Capital Breakdown</h4>
+        <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">
+          Capital Breakdown
+        </h4>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="p-4 text-center border rounded">
             <h5 className="font-medium">Base Capital</h5>
-            <p>{currency}{formatNumber(analytics.totalCapital)}</p>
+            <p>
+              {currency}
+              {formatNumber(analytics.totalCapital)}
+            </p>
             <p className="text-sm text-gray-500">
-              {analytics.totalSales > 0 ? 
-                `${((analytics.totalCapital / analytics.totalSales) * 100).toFixed(2)}% of sales` 
-                : 'N/A'}
+              {analytics.totalSales > 0
+                ? `${(
+                    (analytics.totalCapital / analytics.totalSales) *
+                    100
+                  ).toFixed(2)}% of sales`
+                : "N/A"}
             </p>
           </div>
           <div className="p-4 text-center border rounded">
             <h5 className="font-medium">Margin</h5>
-            <p>{currency}{formatNumber(analytics.totalAdditionalCapital + analytics.totalVariationAdjustment)}</p>
+            <p>
+              {currency}
+              {formatNumber(
+                analytics.totalAdditionalCapital +
+                  analytics.totalVariationAdjustment
+              )}
+            </p>
             <p className="text-sm text-gray-500">
-              {analytics.totalSales > 0 ? 
-                `${((analytics.totalAdditionalCapital / analytics.totalSales) * 100).toFixed(2)}% of sales` 
-                : 'N/A'}
+              {analytics.totalSales > 0
+                ? `${(
+                    (analytics.totalAdditionalCapital / analytics.totalSales) *
+                    100
+                  ).toFixed(2)}% of sales`
+                : "N/A"}
             </p>
           </div>
-        
-          
+
           {/* <div className="p-4 text-center border rounded">
             <h5 className="font-medium">Total Capital</h5>
             <p>{currency}{formatNumber(analytics.totalCombinedCapital)}</p>
@@ -1010,46 +1307,86 @@ const OrderAnalytics = ({ token }) => {
       {/* Low Stock Products Section */}
       {analytics.lowStockProducts.length > 0 && (
         <div className="p-4 mb-6 bg-white rounded-lg shadow-lg">
-          <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">Low Stock Products</h4>
+          <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">
+            Low Stock Products
+          </h4>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Product Name</th>
-                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Remaining Quantity</th>
-                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                    Product Name
+                  </th>
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                    Remaining Quantity
+                  </th>
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {analytics.lowStockProducts
                   .sort((a, b) => {
-                    const aQty = a.variations?.reduce((sum, v) => sum + v.options?.reduce((s, o) => s + (o.quantity || 0), 0), 0) || a.quantity || 0;
-                    const bQty = b.variations?.reduce((sum, v) => sum + v.options?.reduce((s, o) => s + (o.quantity || 0), 0), 0) || b.quantity || 0;
+                    const aQty =
+                      a.variations?.reduce(
+                        (sum, v) =>
+                          sum +
+                          v.options?.reduce((s, o) => s + (o.quantity || 0), 0),
+                        0
+                      ) ||
+                      a.quantity ||
+                      0;
+                    const bQty =
+                      b.variations?.reduce(
+                        (sum, v) =>
+                          sum +
+                          v.options?.reduce((s, o) => s + (o.quantity || 0), 0),
+                        0
+                      ) ||
+                      b.quantity ||
+                      0;
                     return aQty - bQty;
                   })
                   .slice(0, 10)
                   .map((product) => {
-                    const totalQuantity = product.variations?.reduce((sum, variation) => {
-                      return sum + variation.options?.reduce((optSum, option) => {
-                        return optSum + (option.quantity || 0);
-                      }, 0);
-                    }, 0) || product.quantity || 0;
-                    const status = totalQuantity < 5 ? 'Critical' : 'Low';
-                    
+                    const totalQuantity =
+                      product.variations?.reduce((sum, variation) => {
+                        return (
+                          sum +
+                          variation.options?.reduce((optSum, option) => {
+                            return optSum + (option.quantity || 0);
+                          }, 0)
+                        );
+                      }, 0) ||
+                      product.quantity ||
+                      0;
+                    const status = totalQuantity < 5 ? "Critical" : "Low";
+
                     return (
                       <tr key={product._id || Math.random()}>
-                        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{product.name}</td>
                         <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            status === 'Critical' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
+                          {product.name}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              status === "Critical"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
                             {formatNumber(totalQuantity)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            status === 'Critical' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              status === "Critical"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
                             {status}
                           </span>
                         </td>
@@ -1061,7 +1398,8 @@ const OrderAnalytics = ({ token }) => {
           </div>
           {analytics.lowStockProducts.length > 10 && (
             <div className="mt-2 text-sm text-center text-gray-500">
-              Showing 10 of {formatNumber(analytics.lowStockProducts.length)} low stock products
+              Showing 10 of {formatNumber(analytics.lowStockProducts.length)}{" "}
+              low stock products
             </div>
           )}
         </div>
@@ -1069,66 +1407,119 @@ const OrderAnalytics = ({ token }) => {
 
       {/* Order Details Table */}
       <div className="p-4 mb-6 bg-white rounded-lg shadow-lg">
-        <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">Order Details</h4>
+        <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">
+          Order Details
+        </h4>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Order ID</th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Customer</th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Products</th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Sales</th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Capital</th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Profit</th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">VAT</th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  Order ID
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  Customer
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  Products
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  Sales
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  Capital
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  Profit
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  VAT
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {orders.slice(0, 5).map((order) => {
-                const orderCapital = order.items?.reduce?.((sum, item) => 
-                  sum + (item.capital || 0) * (item.quantity || 0), 0) || 0;
-                const orderAdditionalCapital = order.items?.reduce?.((sum, item) => 
-                  sum + (item.additionalCapital || 0) * (item.quantity || 0), 0) || 0;
-                const orderCombinedCapital = orderCapital + orderAdditionalCapital;
+                const orderCapital =
+                  order.items?.reduce?.(
+                    (sum, item) =>
+                      sum + (item.capital || 0) * (item.quantity || 0),
+                    0
+                  ) || 0;
+                const orderAdditionalCapital =
+                  order.items?.reduce?.(
+                    (sum, item) =>
+                      sum +
+                      (item.additionalCapital || 0) * (item.quantity || 0),
+                    0
+                  ) || 0;
+                const orderCombinedCapital =
+                  orderCapital + orderAdditionalCapital;
                 const orderProfit = (order.amount || 0) - orderCombinedCapital;
-                const orderVAT = order.items?.reduce?.((sum, item) => {
-                  const itemPrice = item.price || 0;
-                  const itemVATRate = (item.vat || 0) / 100;
-                  const quantity = item.quantity || 0;
-                  return sum + (itemPrice * quantity * itemVATRate);
-                }, 0) || 0;
-                
+                const orderVAT =
+                  order.items?.reduce?.((sum, item) => {
+                    const itemPrice = item.price || 0;
+                    const itemVATRate = (item.vat || 0) / 100;
+                    const quantity = item.quantity || 0;
+                    return sum + itemPrice * quantity * itemVATRate;
+                  }, 0) || 0;
+
                 return (
                   <tr key={order._id || Math.random()}>
-                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order._id?.slice(-6) || 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.userId || 'Unknown'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {order.items?.map?.(item => item.name).join(", ") || 'N/A'}
+                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                      {order._id?.slice(-6) || "N/A"}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{currency}{formatNumber(order.amount)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      <div>{currency}{formatNumber(orderCombinedCapital)}</div>
-                      <div className="text-xs text-gray-400">
-                        (Base: {currency}{formatNumber(orderCapital)})
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        (Additional: {currency}{formatNumber(orderAdditionalCapital)})
-                      </div>
+                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                      {order.userId || "Unknown"}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {currency}{formatNumber(orderProfit)}
+                      {order.items?.map?.((item) => item.name).join(", ") ||
+                        "N/A"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {currency}
+                      {formatNumber(order.amount)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      <div>
+                        {currency}
+                        {formatNumber(orderCombinedCapital)}
+                      </div>
                       <div className="text-xs text-gray-400">
-                        {order.amount > 0 ? `${(orderProfit / order.amount * 100).toFixed(2)}%` : '0%'} margin
+                        (Base: {currency}
+                        {formatNumber(orderCapital)})
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        (Additional: {currency}
+                        {formatNumber(orderAdditionalCapital)})
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {currency}{formatNumber(orderVAT)} 
+                      {currency}
+                      {formatNumber(orderProfit)}
                       <div className="text-xs text-gray-400">
-                        {order.amount > 0 ? `${(orderVAT / order.amount * 100).toFixed(2)}%` : '0%'}
+                        {order.amount > 0
+                          ? `${((orderProfit / order.amount) * 100).toFixed(
+                              2
+                            )}%`
+                          : "0%"}{" "}
+                        margin
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{order.status || 'Unknown'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {currency}
+                      {formatNumber(orderVAT)}
+                      <div className="text-xs text-gray-400">
+                        {order.amount > 0
+                          ? `${((orderVAT / order.amount) * 100).toFixed(2)}%`
+                          : "0%"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {order.status || "Unknown"}
+                    </td>
                   </tr>
                 );
               })}
@@ -1143,25 +1534,19 @@ const OrderAnalytics = ({ token }) => {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
-        <div className="p-4 bg-white rounded-lg shadow-lg">
-          <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">Sales Trend ({analysisLevel})</h4>
-          <canvas id="timeAnalysisChart" className="w-full aspect-[4/3]"></canvas>
-        </div>
-        <div className="p-4 bg-white rounded-lg shadow-lg">
-          <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">Order Status</h4>
-          <canvas id="statusChart" className="w-full aspect-[4/3]"></canvas>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 gap-6">
         <div className="p-4 bg-white rounded-lg shadow-lg">
-          <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">Top Products</h4>
+          <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">
+            Top Products
+          </h4>
           <canvas id="productsChart" className="w-full aspect-[3/1]"></canvas>
         </div>
         {analytics.lowStockProducts.length > 0 && (
           <div className="p-4 bg-white rounded-lg shadow-lg">
-            <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">Low Stock Products</h4>
+            <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">
+              Low Stock Products
+            </h4>
             <canvas id="stockChart" className="w-full aspect-[3/1]"></canvas>
           </div>
         )}
