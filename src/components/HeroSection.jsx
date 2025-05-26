@@ -35,33 +35,49 @@ const HeroSection = () => {
   }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  e.preventDefault();
+  setIsSubmitting(true);
+  setError(null);
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('subtitle', subtitle);
-    formData.append('type', type);
-    if (image) formData.append('image', image);
-    if (video) formData.append('video', video);
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('subtitle', subtitle);
+  formData.append('type', type);
+  if (image) formData.append('image', image);
+  if (video) formData.append('video', video);
 
+  try {
+    const response = await fetch(`${backendUrl}/api/hero`, {
+      method: 'PUT',
+      body: formData,
+      // Don't set Content-Type header - let browser handle it
+    });
+
+    const responseText = await response.text();
+    
+    // Try to parse JSON, but handle non-JSON responses
+    let data;
     try {
-      const response = await fetch(`${backendUrl}/api/hero`, {
-        method: 'PUT',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Failed to update hero section');
-      const data = await response.json();
-      setHero(data);
-      alert('Hero section updated successfully!');
-    } catch (error) {
-      console.error('Error updating hero section:', error);
-      setError('Failed to update hero section');
-    } finally {
-      setIsSubmitting(false);
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse response:', responseText);
+      throw new Error(`Server returned: ${responseText.substring(0, 100)}...`);
     }
-  };
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update hero section');
+    }
+
+    setHero(data);
+    alert('Hero section updated successfully!');
+  } catch (error) {
+    console.error('Full error:', error);
+    setError(error.message);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   const handleImageChange = (e) => setImage(e.target.files[0]);
   const handleVideoChange = (e) => setVideo(e.target.files[0]);
