@@ -39,40 +39,43 @@ const HeroSection = () => {
   setIsSubmitting(true);
   setError(null);
 
-  const formData = new FormData();
-  formData.append('title', title);
-  formData.append('subtitle', subtitle);
-  formData.append('type', type);
-  if (image) formData.append('image', image);
-  if (video) formData.append('video', video);
-
   try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('subtitle', subtitle);
+    formData.append('type', type);
+    if (image) formData.append('image', image);
+    if (video) formData.append('video', video);
+
     const response = await fetch(`${backendUrl}/api/hero`, {
       method: 'PUT',
       body: formData,
-      // Don't set Content-Type header - let browser handle it
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
 
-    const responseText = await response.text();
-    
-    // Try to parse JSON, but handle non-JSON responses
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('Failed to parse response:', responseText);
-      throw new Error(`Server returned: ${responseText.substring(0, 100)}...`);
-    }
+    const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to update hero section');
+      throw new Error(result.message || 'Failed to update hero section');
     }
 
-    setHero(data);
+    setHero(result.data);
     alert('Hero section updated successfully!');
   } catch (error) {
     console.error('Full error:', error);
-    setError(error.message);
+    setError(error.message || 'Failed to update hero section');
+    
+    // Additional debug logging
+    if (error.response) {
+      console.error('Response error:', await error.response.json());
+    }
   } finally {
     setIsSubmitting(false);
   }
@@ -91,7 +94,7 @@ const HeroSection = () => {
       <div className="relative w-full h-96">
         {hero?.type === 'video' ? (
           <video
-            src={`${backendUrl}${hero.video}`}
+            src={hero.video}
             autoPlay
             loop
             muted
@@ -99,7 +102,7 @@ const HeroSection = () => {
           />
         ) : (
           <img
-            src={`${backendUrl}${hero.image}`}
+            src={hero?.image}
             alt="Hero"
             className="object-cover w-full h-full rounded-lg shadow-lg"
           />
@@ -142,7 +145,7 @@ const HeroSection = () => {
           </div>
           {type === 'image' && (
             <div className="mb-4">
-              <label className="block mb-2 text-lg font-medium text-gray-800 ">Upload Image</label>
+              <label className="block mb-2 text-lg font-medium text-gray-800">Upload Image</label>
               <input
                 type="file"
                 accept="image/*"

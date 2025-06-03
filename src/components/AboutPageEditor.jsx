@@ -2,19 +2,231 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AboutSection from "./AboutSection";
 import AdminLocationEditor from "./AdminLocationEditor";
+
 const componentEditors = {
-    "About Us": AboutSection,
-    "Location": AdminLocationEditor,
-
-  
-
+  "About Us": AboutSection,
+  "Location": AdminLocationEditor,
 };
 
-const HomePageEditor = () => {
-const [selectedComponent, setSelectedComponent] = useState(Object.keys(componentEditors)[0]);
+const AboutPageEditor = () => {
+  const [selectedComponent, setSelectedComponent] = useState(Object.keys(componentEditors)[0]);
+  const [aboutData, setAboutData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [formData, setFormData] = useState({
+    mainTitle: "",
+    description: "",
+    mission: "",
+    qualityAssurance: "",
+    convenience: "",
+    customerService: ""
+  });
 
+  useEffect(() => {
+    fetchAboutData();
+  }, []);
 
-  const SelectedEditor = componentEditors[selectedComponent];
+  const fetchAboutData = async () => {
+    try {
+      const response = await axios.get('/api/about');
+      setAboutData(response.data);
+      setFormData({
+        mainTitle: response.data.mainTitle || "",
+        description: response.data.description || "",
+        mission: response.data.mission || "",
+        qualityAssurance: response.data.qualityAssurance || "",
+        convenience: response.data.convenience || "",
+        customerService: response.data.customerService || ""
+      });
+      if (response.data.image) {
+        setImagePreview(response.data.image);
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching about data:', error);
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Create preview for the selected image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const formDataToSend = new FormData();
+      
+      // Append text fields
+      Object.keys(formData).forEach(key => {
+        formDataToSend.append(key, formData[key]);
+      });
+      
+      // Append image if selected
+      const imageInput = document.querySelector('input[type="file"]');
+      if (imageInput.files[0]) {
+        formDataToSend.append('image', imageInput.files[0]);
+      }
+
+      const response = await axios.put('/api/about', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setAboutData(response.data);
+      if (response.data.image) {
+        setImagePreview(response.data.image);
+      }
+      alert('About data updated successfully!');
+    } catch (error) {
+      console.error('Error updating about data:', error);
+      alert('Failed to update about data');
+    }
+  };
+
+  const AboutSection = () => (
+    <div>
+      <h3 className="mb-6 text-xl font-semibold text-gray-800">About Us Section Editor</h3>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-12 h-12 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Main Title</label>
+              <input
+                type="text"
+                name="mainTitle"
+                value={formData.mainTitle}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">About Image</label>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Choose Image
+                  </button>
+                </div>
+                {imagePreview && (
+                  <div className="w-16 h-16 overflow-hidden border border-gray-200 rounded-md">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">Description</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">Mission</label>
+            <textarea
+              name="mission"
+              value={formData.mission}
+              onChange={handleInputChange}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">Quality Assurance</label>
+            <textarea
+              name="qualityAssurance"
+              value={formData.qualityAssurance}
+              onChange={handleInputChange}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">Convenience</label>
+            <textarea
+              name="convenience"
+              value={formData.convenience}
+              onChange={handleInputChange}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">Customer Service</label>
+            <textarea
+              name="customerService"
+              value={formData.customerService}
+              onChange={handleInputChange}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="px-6 py-2 font-medium text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Save Changes
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+
+  const SelectedEditor = componentEditors[selectedComponent] || AboutSection;
 
   return (
     <div className="min-h-screen p-6 bg-gray-50">
@@ -46,7 +258,6 @@ const [selectedComponent, setSelectedComponent] = useState(Object.keys(component
         <div className="p-6 bg-white shadow-sm rounded-xl">
           {SelectedEditor ? (
             <div>
-              {/* <h3 className="mb-6 text-lg font-medium text-gray-900">{selectedComponent} Settings</h3> */}
               <SelectedEditor />
             </div>
           ) : (
@@ -74,4 +285,4 @@ const [selectedComponent, setSelectedComponent] = useState(Object.keys(component
   );
 };
 
-export default HomePageEditor;
+export default AboutPageEditor;

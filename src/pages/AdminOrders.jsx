@@ -54,6 +54,8 @@ const AdminOrders = ({ token }) => {
     }
   }, [token]);
 
+
+
   const fetchAllOrders = async () => {
     try {
       setLoading(true);
@@ -76,20 +78,27 @@ const AdminOrders = ({ token }) => {
     }
   };
 
-  const fetchCarriers = async () => {
-    try {
-      const response = await axios.get(
-        `${backendUrl}/api/order/carriers`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (response.data.success) {
-        setCarriers(response.data.carriers);
-      }
-    } catch (error) {
-      toast.error('Failed to fetch carriers');
-      console.error(error);
+ const fetchCarriers = async () => {
+  try {
+    const response = await axios.get(
+      `${backendUrl}/api/order/carriers`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    console.log('Carriers response:', response.data);
+    if (response.data.success) {
+      setCarriers(response.data.carriers); // ✅ Saves the carriers
+    } else {
+      console.error('Carriers API error:', response.data.message);
     }
-  };
+  } catch (error) {
+    console.error("Failed to fetch carriers:", {
+      message: error.message,
+      response: error.response?.data
+    });
+    toast.error('Failed to fetch carriers');
+  }
+};
+
 
   const statusHandler = async (event, orderId) => {
     try {
