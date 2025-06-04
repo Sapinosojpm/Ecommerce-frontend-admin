@@ -172,7 +172,7 @@ const Sidebar = () => {
     {
       title: 'E-Commerce',
       items: [
-        { path: '/ask-discount', icon: <FaPercentage />, text: 'Ask Discount', permission: 'askDiscount' },
+  
         { path: '/voucheramount', icon: <FaPercentage />, text: 'Voucher Amount', permission: 'voucherAmount' },
         { path: '/category', icon: <FaClipboard />, text: 'Category', permission: 'category' },
         { path: '/region', icon: <FaMapMarkerAlt />, text: 'Region Fee', permission: 'regionFee' },

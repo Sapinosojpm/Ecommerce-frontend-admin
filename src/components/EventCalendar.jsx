@@ -9,6 +9,15 @@ const EventCalendar = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const openModal = () => {
+    setIsOpen(true);
+  }
+  const closeModal = () => {
+    setIsOpen(false);
+  }
+
 
   // Fetch events from the backend
   const fetchEvents = async () => {
@@ -86,85 +95,94 @@ const EventCalendar = () => {
     fetchEvents();
   }, []);
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
-  if (error) return <div className="text-center text-red-600 py-4">{error}</div>;
+  if (loading) return <div className="py-4 text-center">Loading...</div>;
+  if (error) return <div className="py-4 text-center text-red-600">{error}</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h2 className="text-2xl font-semibold mb-6 text-center">Event Calendar Management</h2>
+    <div className="max-w-4xl p-4 mx-auto">
+      <h2 className="mb-6 text-2xl font-semibold text-center">Event Calendar Management</h2>
 
-      {/* Event Form */}
-      <form onSubmit={handleSubmit} className="space-y-4 bg-gray-100 p-6 rounded-lg shadow-md">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter event title"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Event Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter event description"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
-          <input
-            type="datetime-local"
-            value={startDateTime}
-            onChange={(e) => setStartDateTime(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
-          <input
-            type="datetime-local"
-            value={endDateTime}
-            onChange={(e) => setEndDateTime(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700"
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full p-3 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-all duration-300"
-        >
-          Add Event
+      <button onClick={openModal} className="px-4 py-2 mb-4 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+        Add New Event 
         </button>
-      </form>
+
+        {isOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <form onSubmit={handleSubmit} className="relative w-full max-w-lg p-6 mx-4 space-y-4 bg-white shadow-2xl rounded-xl">
+      <button onClick={closeModal} className="absolute z-50 text-xl text-gray-800 top-4 right-4 hover:text-black">x</button>
+      <div>
+        <label className="block mb-1 text-sm font-medium text-gray-700">Event Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Enter event title"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 text-sm font-medium text-gray-700">Event Description</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Enter event description"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 text-sm font-medium text-gray-700">Start Date & Time</label>
+        <input
+          type="datetime-local"
+          value={startDateTime}
+          onChange={(e) => setStartDateTime(e.target.value)}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 text-sm font-medium text-gray-700">End Date & Time</label>
+        <input
+          type="datetime-local"
+          value={endDateTime}
+          onChange={(e) => setEndDateTime(e.target.value)}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-700"
+          required
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="w-full p-3 text-white transition-all duration-300 bg-indigo-700 rounded-lg hover:bg-indigo-800"
+      >
+        Add Event
+      </button>
+    </form>
+  </div>
+)}
+
 
       {/* Event List */}
       <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4">Event List</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <h3 className="mb-4 text-xl font-semibold">Event List</h3>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {events.length === 0 ? (
-            <p className="text-center text-gray-600 col-span-2">No events available.</p>
+            <p className="col-span-2 text-center text-gray-600">No events available.</p>
           ) : (
             events.map((event) => (
-              <div key={event._id} className="p-4 border rounded-lg shadow-lg bg-white">
-                <h4 className="text-lg font-bold mb-2">{event.title}</h4>
+              <div key={event._id} className="p-4 bg-white border rounded-lg shadow-lg">
+                <h4 className="mb-2 text-lg font-bold">{event.title}</h4>
                 <p className="text-sm text-gray-600">
                   {new Date(event.startDate).toLocaleString()} - {new Date(event.endDate).toLocaleString()}
                 </p>
-                <p className="text-gray-700 mb-3">{event.description}</p>
+                <p className="mb-3 text-gray-700">{event.description}</p>
                 <button
                   onClick={() => handleDelete(event._id)}
-                  className="w-full bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-300"
+                  className="w-full px-4 py-2 text-white transition-all duration-300 bg-red-500 rounded-lg hover:bg-red-600"
                 >
                   Remove
                 </button>

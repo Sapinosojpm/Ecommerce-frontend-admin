@@ -62,8 +62,8 @@ const CategoryEditor = () => {
   };
 
   return (
-    <div className="p-6 bg-white shadow-md rounded-md">
-      <h2 className="text-xl font-semibold mb-4">Category Editor</h2>
+    <div className="p-6 bg-white rounded-md shadow-md">
+      <h2 className="mb-4 text-xl font-semibold text-indigo-600">Category Editor</h2>
 
       {/* Category Input */}
       <div className="flex gap-3 mb-4">
@@ -72,26 +72,26 @@ const CategoryEditor = () => {
           placeholder="Category Name"
           value={categoryName}
           onChange={(e) => setCategoryName(e.target.value)}
-          className="border p-2 rounded w-full"
+          className="w-full p-2 border border-indigo-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <button
           onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-800 transition"
+          className="px-4 py-2 text-white transition bg-indigo-500 rounded hover:bg-indigo-800"
         >
           {editingCategory ? 'Update' : 'Add'}
         </button>
       </div>
 
       {/* Scrollable Category List */}
-      <div className="border rounded p-2 max-h-60 overflow-y-auto">
+      <div className="p-2 overflow-y-auto border rounded max-h-60">
         {categories.length > 0 ? (
           <ul className="space-y-2">
             {categories.map((cat) => (
-              <li key={cat._id} className="flex justify-between items-center p-2 border rounded">
+              <li key={cat._id} className="flex items-center justify-between p-2 border rounded">
                 <span>{cat.name}</span>
                 <div className="flex gap-2">
                   <button
-                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
+                    className="px-4 py-[2px] text-yellow-800 transition bg-yellow-200 rounded hover:bg-yellow-600 hover:text-white"
                     onClick={() => {
                       setCategoryName(cat.name);
                       setEditingCategory(cat);
@@ -100,7 +100,7 @@ const CategoryEditor = () => {
                     Edit
                   </button>
                   <button
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                    className="px-3 py-1 text-red-800 transition bg-red-300 rounded hover:bg-red-600 hover:text-white"
                     onClick={() => handleDeleteCategory(cat._id)}
                   >
                     Delete

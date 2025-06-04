@@ -48,66 +48,74 @@ const AdminPanel = () => {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">Admin Panel</h1>
+    <div className="max-w-4xl p-4 mx-auto">
+      <h1 className="mb-4 text-2xl font-bold text-indigo-700">Deals Management</h1>
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold">Create New Deal</h2>
-        <input
-          type="text"
-          className="mt-2 block w-full p-2 border border-gray-300 rounded"
-          placeholder="Title"
-          value={newDeal.title}
-          onChange={(e) => setNewDeal({ ...newDeal, title: e.target.value })}
-        />
-        <textarea
-          className="mt-2 block w-full p-2 border border-gray-300 rounded"
-          placeholder="Description"
-          value={newDeal.description}
-          onChange={(e) => setNewDeal({ ...newDeal, description: e.target.value })}
-        />
-        <input
-          type="number"
-          className="mt-2 block w-full p-2 border border-gray-300 rounded"
-          placeholder="Discount %"
-          value={newDeal.discount}
-          onChange={(e) => setNewDeal({ ...newDeal, discount: e.target.value })}
-        />
-        {/* <input
-          type="text"
-          className="mt-2 block w-full p-2 border border-gray-300 rounded"
-          placeholder="Image URL (optional)"
-          value={newDeal.imageUrl}
-          onChange={(e) => setNewDeal({ ...newDeal, imageUrl: e.target.value })}
-        /> */}
-        <button
-          className="mt-4 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
-          onClick={handleCreateDeal}
-        >
-          Create Deal
-        </button>
+      <div className="p-4 mb-6 rounded-lg bg-indigo-50">
+        <h2 className="mb-2 text-lg font-semibold text-indigo-800">Create New Deal</h2>
+        <div className="space-y-2">
+          <input
+            type="text"
+            className="w-full p-2 text-sm border border-indigo-200 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Title"
+            value={newDeal.title}
+            onChange={(e) => setNewDeal({ ...newDeal, title: e.target.value })}
+          />
+          <textarea
+            className="w-full p-2 text-sm border border-indigo-200 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Description"
+            rows="2"
+            value={newDeal.description}
+            onChange={(e) => setNewDeal({ ...newDeal, description: e.target.value })}
+          />
+          <div className="flex space-x-2">
+            <input
+              type="number"
+              className="w-1/4 p-2 text-sm border border-indigo-200 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Discount %"
+              value={newDeal.discount}
+              onChange={(e) => setNewDeal({ ...newDeal, discount: e.target.value })}
+            />
+            <button
+              className="flex-1 px-3 py-2 text-sm text-white transition-colors bg-indigo-600 rounded hover:bg-indigo-700"
+              onClick={handleCreateDeal}
+            >
+              Create Deal
+            </button>
+          </div>
+        </div>
       </div>
 
-      <h2 className="text-xl font-semibold">Current Deals</h2>
-      <div>
+      <h2 className="mb-2 text-lg font-semibold text-indigo-800">Current Deals</h2>
+      <div className="space-y-3">
         {deals.map((deal) => (
-          <div key={deal._id} className="mb-4 p-4 border border-gray-300 rounded">
-            <h3 className="font-semibold text-lg">{deal.title}</h3>
-            <p>{deal.description}</p>
-            <p>Discount: {deal.discount}%</p>
-            <p>Status: {deal.active ? 'Active' : 'Inactive'}</p>
-            <button
-              className="mr-2 px-4 py-2 bg-yellow-500 text-white rounded"
-              onClick={() => handleUpdateDeal(deal._id, { ...deal, active: !deal.active })}
-            >
-              {deal.active ? 'Deactivate' : 'Activate'}
-            </button>
-            <button
-              className="px-4 py-2 bg-red-500 text-white rounded"
-              onClick={() => handleDeleteDeal(deal._id)}
-            >
-              Delete
-            </button>
+          <div key={deal._id} className="p-3 bg-white border border-indigo-100 rounded-lg shadow-sm">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-medium text-indigo-900">{deal.title}</h3>
+                <p className="mb-1 text-sm text-gray-600">{deal.description}</p>
+                <div className="flex items-center space-x-3 text-xs">
+                  <span className="px-2 py-1 text-indigo-800 bg-indigo-100 rounded-full">{deal.discount}% off</span>
+                  <span className={`px-2 py-1 rounded-full ${deal.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {deal.active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  className="px-3 py-1 text-xs text-indigo-800 transition-colors bg-indigo-100 rounded hover:bg-indigo-200"
+                  onClick={() => handleUpdateDeal(deal._id, { ...deal, active: !deal.active })}
+                >
+                  {deal.active ? 'Deactivate' : 'Activate'}
+                </button>
+                <button
+                  className="px-3 py-1 text-xs text-red-800 transition-colors bg-red-100 rounded hover:bg-red-200"
+                  onClick={() => handleDeleteDeal(deal._id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>

@@ -6,36 +6,38 @@ const Navbar = ({ setToken }) => {
     console.warn("🚪 Logging out...");
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("botHelloShown");
     setToken("");
     window.location.href = "/login";
   };
 
   useEffect(() => {
-    const checkTokenExpiration = () => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        try {
-          const base64Url = token.split(".")[1];
-          const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-          const payload = JSON.parse(atob(base64));
-          if (payload.exp * 1000 < Date.now()) {
-            console.warn("⚠️ Token expired. Logging out...");
-            logout();
-          }
-        } catch (error) {
-          console.error("❌ Invalid token format. Logging out...");
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(atob(base64));
+      const timeUntilExpiration = payload.exp * 1000 - Date.now();
+      if (timeUntilExpiration <= 0) {
+        logout();
+      } else {
+        const timeout = setTimeout(() => {
+          console.warn("⚠️ Token expired. Logging out...");
           logout();
-        }
-      }
-    };
+        }, timeUntilExpiration);
 
-    checkTokenExpiration();
-    const interval = setInterval(checkTokenExpiration, 60000);
-    return () => clearInterval(interval);
-  }, []);
+        return () => clearTimeout(timeout);
+      }
+    } catch (error) {
+      logout();
+    }
+  }
+}, []);
+
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 bg-indigo-600 shadow-lg">
+    <div className="flex items-center justify-between px-6 py-3 bg-indigo-600 shadow-md">
      <img
   className="w-auto h-10"
   src={assets.ecommerce}

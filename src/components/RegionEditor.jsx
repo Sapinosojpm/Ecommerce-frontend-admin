@@ -40,7 +40,7 @@ const RegionEditor = () => {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
-      <h2 className="mb-4 text-2xl font-semibold text-gray-700">Manage Delivery Fees</h2>
+      <h2 className="mb-4 text-2xl font-semibold text-indigo-700">Manage Delivery Fees</h2>
 
       {/* Scrollable Table */}
       <div className="overflow-y-auto border border-gray-300 rounded-lg max-h-96">
@@ -62,7 +62,7 @@ const RegionEditor = () => {
             ) : (
               regions.map((region) => (
                 <tr key={region._id} className="transition hover:bg-gray-50">
-                  <td className="p-3 border">{region.name}</td>
+                  <td className="p-3 text-sm border">{region.name}</td>
                   {editingRegion === region._id ? (
                     <>
                       <td className="p-3 border">
@@ -76,13 +76,13 @@ const RegionEditor = () => {
                               )
                             )
                           }
-                          className="w-full p-2 border border-gray-300 rounded-lg"
+                          className="w-full p-2 text-sm border border-gray-300 rounded-lg"
                         />
                       </td>
                       <td className="p-3 text-center border">
                         <button
                           onClick={() => updateRegionFee(region._id, region.fee)}
-                          className="px-3 py-2 mx-1 text-white bg-blue-500 rounded-lg hover:bg-blue-600"
+                          className="px-3 py-2 mx-1 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600"
                           disabled={loading}
                         >
                           Save
@@ -101,7 +101,7 @@ const RegionEditor = () => {
                       <td className="p-3 text-center border">
                         <button
                           onClick={() => setEditingRegion(region._id)}
-                          className="px-3 py-2 mx-1 text-white bg-yellow-500 rounded-lg hover:bg-yellow-600"
+                          className="px-3 py-2 mx-1 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600"
                         >
                           Edit Fee
                         </button>

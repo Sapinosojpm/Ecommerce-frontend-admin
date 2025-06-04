@@ -46,6 +46,8 @@ import AboutPage from './components/AboutPageEditor';
 import ContactPage from './components/ContactPageEditor';
 import PopupManager from './components/PopupManager';
 import AdminLiveChat from './components/AdminLiveChat';
+import BotHelloLottie from './components/BotHelloLottie';
+import { Bot } from 'lucide-react';
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = '₱';
 
@@ -142,6 +144,7 @@ const App = () => {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.4 }}
                 >
+                  <BotHelloLottie />
                   <Routes location={location} key={location.pathname}>
                     <Route path='/admin-live-chat' element={<AdminLiveChat token={token} />} />
                     <Route path='/popup' element={<PopupManager token={token} />} />

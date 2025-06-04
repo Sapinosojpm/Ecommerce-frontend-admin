@@ -10,6 +10,16 @@ const JobPopupEditor = () => {
   const [error, setError] = useState(null);
   const [applicants, setApplicants] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  /** Toggle modal visibility */
+  const openModal = () => {
+    setIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+  };
 
   /** Fetch job postings from the backend */
   const fetchJobs = async () => {
@@ -95,73 +105,109 @@ const JobPopupEditor = () => {
     fetchJobs();
   }, []);
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
-  if (error) return <div className="text-center text-red-600 py-4">{error}</div>;
+  if (loading) return <div className="py-4 text-center">Loading...</div>;
+  if (error)
+    return <div className="py-4 text-center text-red-600">{error}</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h2 className="text-2xl font-semibold mb-6 text-center">Job Posting Editor</h2>
+    <div className="max-w-4xl p-4 mx-auto">
+      <h2 className="mb-6 text-2xl font-bold text-center text-indigo-800">
+        Job Posting Editor
+      </h2>
+      <button
+        onClick={openModal}
+        className="px-4 py-2 mb-4 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+      >
+        Add New Job Posting
+      </button>
 
-      {/* Job Posting Form */}
-      <form onSubmit={handleSubmit} className="space-y-4 bg-gray-100 p-6 rounded-lg shadow-md">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg"
-            required
-          />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-lg p-6 mx-4 bg-white shadow-2xl rounded-xl">
+            {/* Job Posting Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div
+                onClick={closeModal}
+                className="relative z-50 flex justify-end text-xl text-gray-700 cursor-pointer margin-5 hover:text-black"
+              >
+                ✕
+              </div>
+
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Job Title
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Job Description
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Upload Job Image
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) => setImage(e.target.files[0])}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full p-3 text-white bg-indigo-700 rounded-lg hover:bg-indigo-800"
+              >
+                Add Job Posting
+              </button>
+            </form>
+          </div>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Job Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Upload Job Image</label>
-          <input
-            type="file"
-            onChange={(e) => setImage(e.target.files[0])}
-            className="w-full p-3 border border-gray-300 rounded-lg"
-          />
-        </div>
-
-        <button type="submit" className="w-full p-3 bg-green-700 text-white rounded-lg hover:bg-green-800">
-          Add Job Posting
-        </button>
-      </form>
+      )}
 
       {/* Job Listings */}
       <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4">Job Listings</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {jobs.length === 0 ? (
-            <p className="text-center text-gray-600 col-span-2">No job postings available.</p>
+            <p className="col-span-2 text-center text-gray-600">
+              No job postings available.
+            </p>
           ) : (
             jobs.map((job) => (
-              <div key={job._id} className="p-4 border rounded-lg shadow-lg bg-white relative">
-                <h4 className="text-lg font-bold mb-2">{job.title}</h4>
-                <p className="text-gray-600 mb-3">{job.description}</p>
+              <div
+                key={job._id}
+                className="relative p-4 bg-white border rounded-lg shadow-lg"
+              >
+                <h4 className="mb-2 text-lg font-bold">{job.title}</h4>
+                <p className="mb-3 text-gray-600">{job.description}</p>
                 {job.image && (
                   <img
                     src={`${backendUrl}/${job.image.replace(/\\/g, "/")}`} // Ensure proper path formatting
                     alt="Job"
-                    className="w-full h-40 object-cover mb-3 rounded-lg shadow-md"
+                    className="object-cover w-full h-40 mb-3 rounded-lg shadow-md"
                   />
                 )}
 
                 <div className="flex justify-end">
                   <button
                     onClick={() => handleDelete(job._id)}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                    className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
                   >
                     Remove
                   </button>
@@ -170,7 +216,7 @@ const JobPopupEditor = () => {
                 {/* View Applicants Button */}
                 <button
                   onClick={() => fetchApplicants(job._id)}
-                  className="w-full mt-3 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="w-full p-2 mt-3 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
                 >
                   View Applicants
                 </button>
@@ -180,16 +226,20 @@ const JobPopupEditor = () => {
         </div>
       </div>
 
-      {/* Applicants Table */}
+      
+      <div>
+          {/* Applicants Table */}
       {selectedJob && (
         <div className="mt-8">
-          <h3 className="text-xl font-semibold text-green-700">Applicants for Job</h3>
-          <div className="overflow-x-auto mt-4">
-            <table className="w-full border-collapse border border-gray-300">
+          <h3 className="text-xl font-semibold text-indigo-700">
+            Applicants for Job
+          </h3>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full border border-collapse border-gray-300">
               <thead>
-                <tr className="bg-green-700 text-white">
+                <tr className="text-white bg-indigo-700">
+                   <th className="p-3 border">Name</th>
                   <th className="p-3 border">Position</th>
-                  <th className="p-3 border">Name</th>
                   <th className="p-3 border">Address</th>
                   <th className="p-3 border">Experience</th>
                   <th className="p-3 border">Resume</th>
@@ -199,25 +249,39 @@ const JobPopupEditor = () => {
                 {applicants.length > 0 ? (
                   applicants.map((applicant) => (
                     <tr key={applicant._id} className="hover:bg-gray-100">
-                      <td className="p-3 border">{applicant.jobTitle}</td>
-                      <td className="p-3 border">{applicant.firstName} {applicant.lastName}</td>
+                     
+                      <td className="p-3 bg-gray-200 border border-gray-300">
+                        {applicant.firstName} {applicant.lastName}
+                      </td>
+                       <td className="p-3 border">{applicant.jobTitle}</td>
                       <td className="p-3 border">{applicant.address}</td>
                       <td className="p-3 border">{applicant.experience}</td>
-                      <td className="p-3 border">
-                        <a href={`${backendUrl}/${applicant.resume}`} className="text-blue-600 underline" target="_blank">
+                      <td className="flex justify-center p-3 border">
+                        <a
+                          href={`${backendUrl}/${applicant.resume}`}
+                          className="px-2 py-1 text-indigo-600 border border-indigo-600 rounded-lg underline-none hover:bg-indigo-900 hover:text-white"
+                          target="_blank"
+                        >
                           View Resume
                         </a>
                       </td>
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan="5" className="text-center p-3 border">No applicants yet.</td></tr>
+                  <tr>
+                    <td colSpan="5" className="p-3 text-center border">
+                      No applicants yet.
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
       )}
+
+      </div>
+      
     </div>
   );
 };

@@ -75,13 +75,13 @@ const UserPermissionManagement = () => {
     },
     
     // E-Commerce
-    askDiscount: {
-      name: 'Ask Discount',
-      description: 'Manage discount requests',
-      icon: <FaPercentage />,
-      category: 'E-Commerce',
-      color: 'text-emerald-500'
-    },
+    // askDiscount: {
+    //   name: 'Ask Discount',
+    //   description: 'Manage discount requests',
+    //   icon: <FaPercentage />,
+    //   category: 'E-Commerce',
+    //   color: 'text-emerald-500'
+    // },
     voucherAmount: {
       name: 'Voucher Amount',
       description: 'Configure voucher amounts',

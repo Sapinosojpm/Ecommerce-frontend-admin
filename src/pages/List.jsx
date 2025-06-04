@@ -343,89 +343,200 @@ const List = ({ token }) => {
     setState((prev) => ({ ...prev, list: sortedList }));
   };
 
-  // CSV upload
-  const handleCSVUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  
 
-    setState((prev) => ({ ...prev, csvUploading: true }));
+  // Fixed CSV Download Function
+const downloadCSV = () => {
+  const productsToDownload = state.showLowStockOnly
+    ? getLowStockProducts()
+    : state.list || [];
 
-    try {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: async (results) => {
-          if (!results.data || results.data.length === 0) {
-            toast.error("CSV file is empty or not properly formatted.");
-            return;
-          }
+  if (productsToDownload.length === 0) {
+    toast.error("No data available to download.");
+    return;
+  }
 
-          const products = results.data
-            .filter((item) => item?.Name)
-            .map((item) => {
-              // Handle variations if present in CSV
-              const variations = [];
-              const variationKeys = Object.keys(item).filter(key => key.startsWith('Variation_'));
+  // Create CSV data with proper structure
+  const csvData = productsToDownload.map((product) => {
+    const row = {
+      Name: product?.name || "",
+      Description: product?.description || "",
+      Category: product?.category || "",
+      Capital: product?.capital || 0,
+      AdditionalCapitalType: product?.additionalCapital?.type || "fixed",
+      AdditionalCapitalValue: product?.additionalCapital?.value || 0,
+      VAT: product?.vat || 0,
+      Price: product?.price || 0,
+      Discount: product?.discount || 0,
+      Quantity: product?.quantity || 0,
+      Weight: product?.weight || 0,
+      Bestseller: product?.bestseller ? "true" : "false",
+      AskDiscountType: product?.askForDiscount?.type || "percent",
+      AskDiscountValue: product?.askForDiscount?.value || 0,
+      AskDiscountEnabled: product?.askForDiscount?.enabled ? "true" : "false"
+    };
+
+    // Add variation data if present
+    if (product?.variations && product.variations.length > 0) {
+      product.variations.forEach((variation, vIndex) => {
+        variation.options.forEach((option, oIndex) => {
+          row[`Variation_${vIndex}_${variation.name}_Option_${oIndex}_Name`] = option.name || "";
+          row[`Variation_${vIndex}_${variation.name}_Option_${oIndex}_PriceAdjustment`] = option.priceAdjustment || 0;
+          row[`Variation_${vIndex}_${variation.name}_Option_${oIndex}_Quantity`] = option.quantity || 0;
+          row[`Variation_${vIndex}_${variation.name}_Option_${oIndex}_SKU`] = option.sku || "";
+        });
+      });
+    }
+
+    return row;
+  });
+
+  // Convert to CSV using Papa Parse
+  const csv = Papa.unparse(csvData, {
+    header: true,
+    skipEmptyLines: true
+  });
+
+  // Create and download the file
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `products_${new Date().toISOString().slice(0, 10)}_${state.showLowStockOnly ? "low_stock" : "all"}.csv`
+  );
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+
+// Fixed CSV Upload Function
+const handleCSVUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  setState((prev) => ({ ...prev, csvUploading: true }));
+
+  try {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      dynamicTyping: true,
+      complete: async (results) => {
+        if (!results.data || results.data.length === 0) {
+          toast.error("CSV file is empty or not properly formatted.");
+          setState((prev) => ({ ...prev, csvUploading: false }));
+          return;
+        }
+
+        const products = results.data
+          .filter((item) => item?.Name && item.Name.trim() !== "")
+          .map((item) => {
+            // Handle variations if present in CSV
+            const variations = [];
+            const variationKeys = Object.keys(item).filter(key => 
+              key.startsWith('Variation_') && key.includes('_Option_') && key.endsWith('_Name')
+            );
+            
+            if (variationKeys.length > 0) {
+              const variationGroups = {};
               
-              if (variationKeys.length > 0) {
-                const variationGroups = {};
-                variationKeys.forEach(key => {
+              // Group variation data
+              Object.keys(item).forEach(key => {
+                if (key.startsWith('Variation_')) {
                   const parts = key.split('_');
-                  const vIndex = parts[1];
-                  const vName = parts[2];
-                  const oIndex = parts[4];
-                  const prop = parts.slice(5).join('_');
+                  if (parts.length >= 6) {
+                    const vIndex = parts[1];
+                    const vName = parts[2];
+                    const oIndex = parts[4];
+                    const prop = parts.slice(5).join('_');
 
-                  if (!variationGroups[vIndex]) {
-                    variationGroups[vIndex] = {
-                      name: vName,
-                      options: {}
-                    };
+                    if (!variationGroups[vIndex]) {
+                      variationGroups[vIndex] = {
+                        name: vName,
+                        options: {}
+                      };
+                    }
+
+                    if (!variationGroups[vIndex].options[oIndex]) {
+                      variationGroups[vIndex].options[oIndex] = {};
+                    }
+
+                    // Map CSV fields to database fields
+                    switch(prop) {
+                      case 'Name':
+                        variationGroups[vIndex].options[oIndex].name = item[key] || "";
+                        break;
+                      case 'PriceAdjustment':
+                        variationGroups[vIndex].options[oIndex].priceAdjustment = parseFloat(item[key]) || 0;
+                        break;
+                      case 'Quantity':
+                        variationGroups[vIndex].options[oIndex].quantity = parseInt(item[key]) || 0;
+                        break;
+                      case 'SKU':
+                        variationGroups[vIndex].options[oIndex].sku = item[key] || "";
+                        break;
+                    }
                   }
+                }
+              });
 
-                  if (!variationGroups[vIndex].options[oIndex]) {
-                    variationGroups[vIndex].options[oIndex] = {};
-                  }
-
-                  variationGroups[vIndex].options[oIndex][prop.toLowerCase()] = item[key];
+              // Convert grouped data to variations array
+              Object.keys(variationGroups).forEach(vIndex => {
+                const variationGroup = variationGroups[vIndex];
+                variations.push({
+                  name: variationGroup.name || `Variation ${vIndex}`,
+                  options: Object.values(variationGroup.options).filter(option => 
+                    option.name && option.name.trim() !== ""
+                  )
                 });
+              });
+            }
 
-                for (const vIndex in variationGroups) {
-                  variations.push({
-                    name: variationGroups[vIndex].name,
-                    options: Object.values(variationGroups[vIndex].options)
-                  });
-                }
+            // Build product object with proper data types
+            const product = {
+              name: String(item?.Name || "").trim(),
+              description: String(item?.Description || "").trim(),
+              category: String(item?.Category || "").trim(),
+              capital: parseFloat(item?.Capital) || 0,
+              additionalCapital: {
+                type: String(item?.AdditionalCapitalType || "fixed").toLowerCase(),
+                value: parseFloat(item?.AdditionalCapitalValue) || 0
+              },
+              vat: parseFloat(item?.VAT) || 0,
+              price: parseFloat(item?.Price) || 0,
+              discount: parseFloat(item?.Discount) || 0,
+              quantity: parseInt(item?.Quantity) || 0,
+              weight: parseFloat(item?.Weight) || 0,
+              bestseller: String(item?.Bestseller || "false").toLowerCase() === "true",
+              askForDiscount: {
+                type: String(item?.AskDiscountType || "percent").toLowerCase(),
+                value: parseFloat(item?.AskDiscountValue) || 0,
+                enabled: String(item?.AskDiscountEnabled || "false").toLowerCase() === "true"
               }
+            };
 
-              return {
-                name: item?.Name || "",
-                description: item?.Description || "",
-                category: item?.Category || "",
-                capital: parseFloat(item?.Capital) || 0,
-                additionalCapital: {
-                  type: item?.AdditionalCapitalType || "fixed",
-                  value: parseFloat(item?.AdditionalCapitalValue) || 0
-                },
-                vat: parseFloat(item?.VAT) || 0,
-                price: parseFloat(item?.Price) || 0,
-                discount: parseFloat(item?.Discount) || 0,
-                quantity: parseInt(item?.Quantity) || 0,
-                weight: parseFloat(item?.Weight) || 0,
-                variations: variations.length > 0 ? variations : undefined,
-                askForDiscount: {
-                  type: item?.AskDiscountType || "percent",
-                  value: parseFloat(item?.AskDiscountValue) || 0,
-                  enabled: item?.AskDiscountEnabled === "true"
-                }
-              };
-            });
+            // Add variations if present
+            if (variations.length > 0) {
+              product.variations = variations;
+            }
 
-          if (products.length === 0) {
-            toast.error("No valid products found in CSV.");
-            return;
-          }
+            return product;
+          })
+          .filter(product => product.name && product.name.trim() !== "");
 
+        if (products.length === 0) {
+          toast.error("No valid products found in CSV. Please check the format.");
+          setState((prev) => ({ ...prev, csvUploading: false }));
+          return;
+        }
+
+        // Upload products to backend
+        try {
           const { data } = await axios.post(
             `${backendUrl}/api/product/bulk`,
             { products },
@@ -434,140 +545,77 @@ const List = ({ token }) => {
 
           if (data?.success) {
             toast.success(
-              `Imported ${data.insertedCount || 0} products successfully!`
+              `Successfully imported ${data.insertedCount || products.length} products!`
             );
-            await fetchList();
+            await fetchList(); // Refresh the product list
           } else {
             toast.error(data?.message || "Import failed");
           }
-        },
-        error: (error) => {
-          console.error("CSV parsing error:", error);
-          toast.error("Error parsing CSV file");
-        },
-      });
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Failed to upload CSV");
-    } finally {
-      setState((prev) => ({ ...prev, csvUploading: false }));
-      event.target.value = "";
-    }
-  };
-
-  // CSV download
-  const downloadCSV = () => {
-    const productsToDownload = state.showLowStockOnly
-      ? getLowStockProducts()
-      : state.list || [];
-
-    if (productsToDownload.length === 0) {
-      toast.error("No data available to download.");
-      return;
-    }
-
-    const headers = [
-      "Name",
-      "Description",
-      "Category",
-      "Capital",
-      "AdditionalCapitalType",
-      "AdditionalCapitalValue",
-      "VAT",
-      "Price",
-      "Discount",
-      "Quantity",
-      "Weight",
-      "AskDiscountType",
-      "AskDiscountValue",
-      "AskDiscountEnabled"
-    ];
-
-    // Add variation headers if any product has variations
-    const hasVariations = productsToDownload.some(p => p?.variations?.length > 0);
-    if (hasVariations) {
-      let maxVariations = 0;
-      let maxOptions = 0;
-      
-      productsToDownload.forEach(product => {
-        if (product?.variations?.length > maxVariations) {
-          maxVariations = product.variations.length;
+        } catch (uploadError) {
+          console.error("Upload error:", uploadError);
+          toast.error("Failed to upload products to server");
         }
-        product?.variations?.forEach(variation => {
-          if (variation.options?.length > maxOptions) {
-            maxOptions = variation.options.length;
-          }
-        });
-      });
-
-      for (let v = 0; v < maxVariations; v++) {
-        for (let o = 0; o < maxOptions; o++) {
-          headers.push(`Variation_${v}_VariationName_Option_${o}_Name`);
-          headers.push(`Variation_${v}_VariationName_Option_${o}_PriceAdjustment`);
-          headers.push(`Variation_${v}_VariationName_Option_${o}_Quantity`);
-          headers.push(`Variation_${v}_VariationName_Option_${o}_SKU`);
-        }
-      }
-    }
-
-    const rows = productsToDownload.map((product) => {
-      const baseRow = [
-        product?.name || "",
-        product?.description || "",
-        product?.category || "",
-        product?.capital || 0,
-        product?.additionalCapital?.type || "fixed",
-        product?.additionalCapital?.value || 0,
-        product?.vat || 0,
-        product?.price || 0,
-        product?.discount || 0,
-        product?.quantity || 0,
-        product?.weight || 0,
-        product?.askForDiscount?.type || "percent",
-        product?.askForDiscount?.value || 0,
-        product?.askForDiscount?.enabled ? "true" : "false"
-      ];
-
-      // Add variation data if present
-      if (hasVariations && product?.variations) {
-        product.variations.forEach((variation, vIndex) => {
-          variation.options.forEach((option, oIndex) => {
-            baseRow.push(option.name || "");
-            baseRow.push(option.priceAdjustment || 0);
-            baseRow.push(option.quantity || 0);
-            baseRow.push(option.sku || "");
-          });
-          // Fill empty cells if this product has fewer options than max
-          for (let o = variation.options.length; o < maxOptions; o++) {
-            baseRow.push("", "", "", "");
-          }
-        });
-        // Fill empty cells if this product has fewer variations than max
-        for (let v = product.variations.length; v < maxVariations; v++) {
-          for (let o = 0; o < maxOptions; o++) {
-            baseRow.push("", "", "", "");
-          }
-        }
-      }
-
-      return baseRow;
+      },
+      error: (error) => {
+        console.error("CSV parsing error:", error);
+        toast.error("Error parsing CSV file. Please check the file format.");
+      },
     });
+  } catch (error) {
+    console.error("Upload error:", error);
+    toast.error("Failed to process CSV file");
+  } finally {
+    setState((prev) => ({ ...prev, csvUploading: false }));
+    if (event.target) {
+      event.target.value = ""; // Clear the file input
+    }
+  }
+};
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers, ...rows].map((row) => row.join(",")).join("\n");
+// CSV Template Download Function (Optional - for users to understand the format)
+const downloadCSVTemplate = () => {
+  const templateData = [{
+    Name: "Sample Product",
+    Description: "Sample product description",
+    Category: "Sample Category",
+    Capital: 100,
+    AdditionalCapitalType: "fixed",
+    AdditionalCapitalValue: 10,
+    VAT: 12,
+    Price: 125.44,
+    Discount: 0,
+    Quantity: 50,
+    Weight: 1.5,
+    Bestseller: "false",
+    AskDiscountType: "percent",
+    AskDiscountValue: 5,
+    AskDiscountEnabled: "true",
+    // Sample variation columns
+    "Variation_0_Size_Option_0_Name": "Small",
+    "Variation_0_Size_Option_0_PriceAdjustment": 0,
+    "Variation_0_Size_Option_0_Quantity": 25,
+    "Variation_0_Size_Option_0_SKU": "PROD-S",
+    "Variation_0_Size_Option_1_Name": "Large", 
+    "Variation_0_Size_Option_1_PriceAdjustment": 10,
+    "Variation_0_Size_Option_1_Quantity": 25,
+    "Variation_0_Size_Option_1_SKU": "PROD-L"
+  }];
 
-    const link = document.createElement("a");
-    link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute(
-      "download",
-      `products_${new Date().toISOString().slice(0, 10)}_${state.showLowStockOnly ? "low_stock" : "all"}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const csv = Papa.unparse(templateData, {
+    header: true
+  });
 
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", "product_template.csv");
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
   // Price calculation
   const calculateFinalPrice = (product) => {
     if (!product) return 0;
@@ -834,6 +882,13 @@ const List = ({ token }) => {
           >
             <FaDownload className="mr-2" />
             Download {state.showLowStockOnly ? "Low Stock" : "All"} CSV
+          </button>
+
+           <button
+            onClick={downloadCSVTemplate}
+            className="flex items-center justify-center px-4 py-2 text-white bg-indigo-500 rounded-md hover:bg-indigo-600 sm:justify-start"
+          >
+            <FaDownload className="mr-2" /> Download CSV Template
           </button>
         </div>
       </div>

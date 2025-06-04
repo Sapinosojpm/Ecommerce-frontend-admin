@@ -445,7 +445,8 @@ const OrderAnalytics = ({ token }) => {
             {
               label: "Quantity Sold",
               data: topProducts.map(([, qty]) => qty),
-              backgroundColor: "#36a2eb",
+              backgroundColor: "rgba(30, 0, 130, 0.8)", // 0.3 is opacity (30%)
+
             },
           ],
         },
@@ -1540,7 +1541,7 @@ const OrderAnalytics = ({ token }) => {
           <h4 className="mb-4 text-lg font-semibold text-center md:text-xl">
             Top Products
           </h4>
-          <canvas id="productsChart" className="w-full aspect-[3/1]"></canvas>
+          <canvas id="productsChart" className=" w-full aspect-[3/1]"></canvas>
         </div>
         {analytics.lowStockProducts.length > 0 && (
           <div className="p-4 bg-white rounded-lg shadow-lg">

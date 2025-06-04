@@ -17,6 +17,25 @@ const VoucherAmountEditor = () => {
     fetchVouchers();
   }, []);
 
+
+const deleteAllVouchers = async () => {
+  if (!window.confirm("Are you sure you want to delete all vouchers?")) return;
+
+  try {
+    await axios.delete(`${backendUrl}/api/voucher-amounts`);
+    setVouchers([]);
+    setAlert({ type: "success", message: "All vouchers deleted successfully!" });
+    fetchVouchers();
+    
+  } catch (error) {
+    console.error("Error deleting vouchers:", error);
+    setAlert({ type: "error", message: "Failed to delete vouchers." });
+  }
+};
+
+  
+
+
   const fetchVouchers = async () => {
     try {
       console.log("📤 Fetching vouchers from:", `${backendUrl}/api/voucher-amounts`);
@@ -29,6 +48,7 @@ const VoucherAmountEditor = () => {
   };
 
   const generateRandomCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+  
 
   const handleShowModal = () => {
     setShowModal(true);
@@ -105,8 +125,8 @@ const VoucherAmountEditor = () => {
   return (
     <div className="max-w-4xl p-6 mx-auto">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-semibold text-green-600">Voucher Amount Editor</h2>
-        <button className="px-4 py-2 text-white bg-green-500 rounded-lg hover:bg-green-600" onClick={handleShowModal}>
+        <h2 className="text-2xl font-semibold text-indigo-600">Voucher Amount Editor</h2>
+        <button className="px-4 py-2 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600" onClick={handleShowModal}>
           + Add Vouchers
         </button>
       </div>
@@ -118,15 +138,20 @@ const VoucherAmountEditor = () => {
       )}
 
     {/* Display Vouchers */}
-<div className="p-4 bg-white rounded-lg shadow">
-  <h3 className="mb-2 text-lg font-semibold">Available Vouchers</h3>
+<div className="p-4 rounded-lg shadow bg-indigo-50">
+
+  <div className="flex items-center justify-between mb-4">
+    <h3 className="mb-2 text-lg font-semibold">Available Vouchers</h3>
+    <button className="px-6 py-1 bg-red-100 rounded-lg hover:bg-red-200" onClick={deleteAllVouchers}>Delete all vouchers</button>
+  </div>
+ 
   {vouchers.length === 0 ? (
     <p className="text-gray-600">No vouchers available.</p>
   ) : (
     <table className="min-w-full border-collapse table-auto">
       <thead>
-        <tr className="bg-gray-100">
-          <th className="px-4 py-2 text-sm font-semibold text-left text-gray-600">Code</th>
+        <tr className="bg-gray-50">
+          <th className="px-4 py-2 text-sm font-semibold text-left text-white bg-gray-500">Code</th>
           <th className="px-4 py-2 text-sm font-semibold text-left text-gray-600">Voucher Amount (₱)</th>
           <th className="px-4 py-2 text-sm font-semibold text-left text-gray-600">Min. Purchase (₱)</th>
           <th className="px-4 py-2 text-sm font-semibold text-left text-gray-600">Actions</th>
@@ -135,12 +160,12 @@ const VoucherAmountEditor = () => {
       <tbody>
         {vouchers.map((voucher) => (
           <tr key={voucher._id} className="border-t">
-            <td className="px-4 py-2 text-sm text-gray-800">{voucher.code}</td>
+            <td className="px-4 py-2 text-sm text-gray-800 bg-gray-300">{voucher.code}</td>
             <td className="px-4 py-2 text-sm text-gray-800">₱{voucher.voucherAmount}</td>
             <td className="px-4 py-2 text-sm text-gray-800">₱{voucher.minimumPurchase}</td>
             <td className="px-4 py-2 text-sm">
               <button
-                className="px-3 py-1 text-white bg-red-500 rounded-lg hover:bg-red-600"
+                className="px-3 py-1 text-red-800 transition-colors bg-red-100 rounded-lg hover:bg-red-200"
                 onClick={() => handleDeleteVoucher(voucher._id)}
               >
                 Delete
@@ -187,7 +212,7 @@ const VoucherAmountEditor = () => {
 
               <div className="flex justify-end mt-3 space-x-2">
                 <button type="button" className="px-4 py-2 text-white bg-gray-500 rounded-lg hover:bg-gray-600" onClick={handleCloseModal}>Cancel</button>
-                <button type="submit" className="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600" disabled={loading}>
+                <button type="submit" className="px-4 py-2 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600" disabled={loading}>
                   {loading ? "Saving..." : "Save All"}
                 </button>
               </div>
