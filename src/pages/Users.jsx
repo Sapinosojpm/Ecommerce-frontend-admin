@@ -168,31 +168,33 @@ const UserPermissionManagement = () => {
 
   // Fetch users from backend API
   const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("authToken") || localStorage.getItem("token");
-      if (!token) {
-        toast.error("No token found, please login again.");
-        return;
-      }
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("authToken");
+    console.log("Fetched token:", token); // Add this
 
-      const response = await axios.get(`${backendUrl}/api/user/users`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.success) {
-        setUsers(response.data.users);
-      } else {
-        toast.error(response.data.message);
-      }
-    } catch (error) {
-      console.log(error);
-      setError("Failed to fetch users. Please try again later.");
-      toast.error("Failed to fetch users. Please try again later.");
-    } finally {
-      setLoading(false);
+    if (!token) {
+      toast.error("No token found, please login again.");
+      return;
     }
-  };
+
+    const response = await axios.get(`${backendUrl}/api/user/users`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.data.success) {
+      setUsers(response.data.users);
+    } else {
+      toast.error(response.data.message);
+    }
+  } catch (error) {
+    console.log(error);
+    setError("Failed to fetch users. Please try again later.");
+    toast.error("Failed to fetch users. Please try again later.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Fetch the current user's details
   const fetchCurrentUser = async () => {

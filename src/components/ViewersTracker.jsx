@@ -14,7 +14,7 @@ const ViewersTracker = () => {
         setError(null);
       
         try {
-          const token = localStorage.getItem("token");
+          const token = localStorage.getItem("authToken");
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
           const response = await axios.get(
@@ -39,9 +39,9 @@ const ViewersTracker = () => {
   }, [timeFilter]);
 
   return (
-    <div className="max-w-4xl mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">
+    <div className="max-w-4xl p-6 mx-auto mt-8 bg-white rounded-lg shadow-lg">
       <motion.h2
-        className="text-2xl font-bold text-center mb-6"
+        className="mb-6 text-2xl font-bold text-center"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -52,7 +52,7 @@ const ViewersTracker = () => {
       {/* Time Filter Dropdown */}
       <div className="flex justify-end mb-4">
         <select
-          className="p-2 border rounded-lg bg-gray-100"
+          className="p-2 bg-gray-100 border rounded-lg"
           value={timeFilter}
           onChange={(e) => setTimeFilter(e.target.value)}
         >
@@ -70,9 +70,9 @@ const ViewersTracker = () => {
       {/* Page Views Table */}
       {!loading && !error && (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse bg-gray-100 shadow-md rounded-lg">
+          <table className="w-full bg-gray-100 border-collapse rounded-lg shadow-md">
             <thead>
-              <tr className="bg-blue-500 text-white">
+              <tr className="text-white bg-blue-500">
                 <th className="p-3 text-left">Page</th>
                 <th className="p-3 text-left">{timeFilter === "daily" ? "Date" : "Month"}</th>
                 <th className="p-3 text-left">User Type</th>
@@ -85,7 +85,7 @@ const ViewersTracker = () => {
                   key={index}
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.3 }}
-                  className="border-b hover:bg-blue-100 transition"
+                  className="transition border-b hover:bg-blue-100"
                 >
                   <td className="p-3">{page.page}</td>
                   <td className="p-3">{page.timePeriod}</td>

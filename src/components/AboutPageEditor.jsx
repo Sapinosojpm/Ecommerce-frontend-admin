@@ -13,6 +13,7 @@ const AboutPageEditor = () => {
   const [aboutData, setAboutData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     mainTitle: "",
     description: "",
@@ -69,37 +70,39 @@ const AboutPageEditor = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const formDataToSend = new FormData();
-      
-      // Append text fields
-      Object.keys(formData).forEach(key => {
-        formDataToSend.append(key, formData[key]);
-      });
-      
-      // Append image if selected
-      const imageInput = document.querySelector('input[type="file"]');
-      if (imageInput.files[0]) {
-        formDataToSend.append('image', imageInput.files[0]);
-      }
+  e.preventDefault();
+  setIsSubmitting(true);
+  try {
+    const formDataToSend = new FormData();
+    Object.keys(formData).forEach(key => {
+      formDataToSend.append(key, formData[key]);
+    });
 
-      const response = await axios.put('/api/about', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      setAboutData(response.data);
-      if (response.data.image) {
-        setImagePreview(response.data.image);
-      }
-      alert('About data updated successfully!');
-    } catch (error) {
-      console.error('Error updating about data:', error);
-      alert('Failed to update about data');
+    const imageInput = document.querySelector('input[type="file"]');
+    if (imageInput.files[0]) {
+      formDataToSend.append('image', imageInput.files[0]);
     }
-  };
+
+    const response = await axios.put('/api/about', formDataToSend, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    setAboutData(response.data);
+    if (response.data.image) {
+      setImagePreview(response.data.image);
+    }
+
+    alert('About data updated successfully!');
+  } catch (error) {
+    console.error('Error updating about data:', error);
+    alert('Failed to update about data');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   const AboutSection = () => (
     <div>
@@ -213,14 +216,42 @@ const AboutPageEditor = () => {
             />
           </div>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="px-6 py-2 font-medium text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Save Changes
-            </button>
-          </div>
+         <button
+  type="submit"
+  disabled={isSubmitting}
+  className={`px-6 py-2 font-medium text-white transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+    isSubmitting ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+  }`}
+>
+  {isSubmitting ? (
+    <span className="flex items-center space-x-2">
+      <svg
+        className="w-5 h-5 text-white animate-spin"
+        fill="none"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+        ></path>
+      </svg>
+      <span>Saving...</span>
+    </span>
+  ) : (
+    "Save Changes"
+  )}
+</button>
+
         </form>
       )}
     </div>

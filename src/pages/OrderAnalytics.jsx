@@ -12,9 +12,11 @@ import "react-datepicker/dist/react-datepicker.css";
 import Review from "../components/Review";
 
 import Plot from "react-plotly.js";
-const OrderAnalytics = ({ token }) => {
+const OrderAnalytics = () => {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const token = localStorage.getItem("authToken");
+  console.log("Token: ", token);
   const [analytics, setAnalytics] = useState({
     totalSales: 0,
     totalCapital: 0,

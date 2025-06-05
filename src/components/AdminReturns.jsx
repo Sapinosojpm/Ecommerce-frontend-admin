@@ -35,7 +35,7 @@ const AdminReturnsPage = () => {
   const fetchReturns = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       const response = await axios.get(`${backendUrl}/api/returns/admin`, {
         headers: {
           Authorization: `Bearer ${token}`,

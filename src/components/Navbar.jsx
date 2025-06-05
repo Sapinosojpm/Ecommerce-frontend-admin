@@ -5,6 +5,7 @@ const Navbar = ({ setToken }) => {
   const logout = () => {
     console.warn("🚪 Logging out...");
     localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
     localStorage.removeItem("role");
     localStorage.removeItem("botHelloShown");
     setToken("");
@@ -12,7 +13,7 @@ const Navbar = ({ setToken }) => {
   };
 
   useEffect(() => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("authToken");
   if (token) {
     try {
       const base64Url = token.split(".")[1];

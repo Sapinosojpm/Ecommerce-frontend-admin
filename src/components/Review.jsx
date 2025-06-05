@@ -18,7 +18,7 @@ const Review = () => {
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("authToken");
       if (!token) {
         toast.error("No token found, please login again.");
         return;
@@ -65,8 +65,8 @@ const Review = () => {
     fetchReviews();
   }, []);
 
-  if (loading) return <div className="text-xl font-bold text-blue-500 text-center mt-6">Loading reviews...</div>;
-  if (error) return <div className="text-red-500 text-lg text-center">{error}</div>;
+  if (loading) return <div className="mt-6 text-xl font-bold text-center text-blue-500">Loading reviews...</div>;
+  if (error) return <div className="text-lg text-center text-red-500">{error}</div>;
 
   // Prepare data for pie chart
   const pieData = {
@@ -79,25 +79,25 @@ const Review = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6">
-      <h1 className="text-2xl md:text-3xl font-semibold mb-6 text-center">Reviews</h1>
+    <div className="container p-4 mx-auto md:p-6">
+      <h1 className="mb-6 text-2xl font-semibold text-center md:text-3xl">Reviews</h1>
 
       {/* Analytics Section */}
-      <div className="grid md:grid-cols-3 gap-6 mb-6">
+      <div className="grid gap-6 mb-6 md:grid-cols-3">
         {/* Total Reviews Card */}
-        <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+        <div className="flex flex-col items-center p-6 bg-white rounded-lg shadow-lg">
           <p className="text-xl font-semibold text-gray-700">Total Reviews</p>
           <p className="text-3xl font-bold text-gray-900">{analytics.totalReviews}</p>
         </div>
 
         {/* Average Rating Card */}
-        <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+        <div className="flex flex-col items-center p-6 bg-white rounded-lg shadow-lg">
           <p className="text-xl font-semibold text-gray-700">Average Rating</p>
           <p className="text-3xl font-bold text-gray-900">{analytics.averageRating} / 5</p>
         </div>
 
         {/* Rating Distribution Pie Chart */}
-        <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="p-6 bg-white rounded-lg shadow-lg">
           <p className="text-xl font-semibold text-center text-gray-700">Rating Distribution</p>
           <div className="h-64">
             <Pie data={pieData} />
@@ -107,18 +107,18 @@ const Review = () => {
 
       {/* Review List */}
       {reviews.length === 0 ? (
-        <p className="text-gray-500 text-center">No reviews found.</p>
+        <p className="text-center text-gray-500">No reviews found.</p>
       ) : (
-        <div className="border rounded p-2 max-h-60 overflow-y-auto">
+        <div className="p-2 overflow-y-auto border rounded max-h-60">
           {reviews.map((review) => (
             <div
               key={review._id}
-              className="bg-white p-4 rounded-lg shadow-md mb-4"
+              className="p-4 mb-4 bg-white rounded-lg shadow-md"
             >
               <div>
                 <h2 className="text-lg font-semibold text-gray-700">{review.name}</h2>
                 <p className="text-gray-500">Rating: {review.rating}</p>
-                <div className="mt-2 max-h-48 overflow-y-auto">
+                <div className="mt-2 overflow-y-auto max-h-48">
                   <p className="text-gray-700">{review.review}</p>
                 </div>
               </div>

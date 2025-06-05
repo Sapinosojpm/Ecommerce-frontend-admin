@@ -52,7 +52,7 @@ export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = '₱';
 
 const App = () => {
-  const [token, setToken] = useState(localStorage.getItem('token') || '');
+  const [token, setToken] = useState(localStorage.getItem('authToken') || '');
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
@@ -77,7 +77,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('token', token);
+    localStorage.setItem('authToken', token);
   }, [token]);
 
   // Close sidebar when navigating to a new page on mobile

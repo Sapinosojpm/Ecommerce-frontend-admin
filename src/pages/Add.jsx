@@ -45,7 +45,7 @@ const Add = () => {
 
   // Fetch token from local storage
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    const storedToken = localStorage.getItem("authToken");
     if (storedToken) {
       setToken(storedToken);
     } else {
