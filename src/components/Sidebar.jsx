@@ -164,9 +164,9 @@ const Sidebar = () => {
         { path: '/add', icon: <FaPlus />, text: 'Add items', permission: 'addItems' },
         { path: '/list', icon: <FaList />, text: 'List items', permission: 'listItems' },
         { path: '/orders', icon: <FaBox />, text: 'Orders', permission: 'orders' },
-        { path: '/return', icon: <FaBox />, text: 'Returns', permission: 'returns' },
+        // { path: '/return', icon: <FaBox />, text: 'Returns', permission: 'returns' },
         { path: '/users', icon: <FaUsers />, text: 'Users', permission: 'users' },
-        { path: '/admin-live-chat', icon: <FaComments />, text: 'Live Chat', permission: 'adminLiveChat' },
+        // { path: '/admin-live-chat', icon: <FaComments />, text: 'Live Chat', permission: 'adminLiveChat' },
       ]
     },
     {

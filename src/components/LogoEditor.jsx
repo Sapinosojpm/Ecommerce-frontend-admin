@@ -9,7 +9,7 @@ const LogoEditor = () => {
   useEffect(() => {
     fetch(`${backendUrl}/api/logo`)
       .then((res) => res.json())
-      .then((data) => setLogo(`${backendUrl}${data.imageUrl}`))
+      .then((data) => setLogo(data.imageUrl)) 
       .catch((error) => console.error("Error fetching logo:", error));
   }, []);
 

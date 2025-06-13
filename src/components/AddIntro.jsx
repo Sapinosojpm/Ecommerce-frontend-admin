@@ -13,7 +13,7 @@ const AddIntro = () => {
   const [intros, setIntros] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("authToken");
 
   // Fetch intros from the backend
   const fetchIntros = async () => {

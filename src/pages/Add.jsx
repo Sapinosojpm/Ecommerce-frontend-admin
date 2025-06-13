@@ -3,6 +3,7 @@ import { assets } from "../assets/assets";
 import axios from "axios";
 import { backendUrl, currency } from "../App";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { toast } from "react-toastify";
 
 const Add = () => {
   const [image1, setImage1] = useState(null);
@@ -228,29 +229,76 @@ const Add = () => {
     }, 0);
   };
 
-  
-  const validateVariations = () => {
+  const validateProduct = () => {
+    const errors = [];
+
+    // Basic field validation
+    if (!name.trim()) errors.push("Product name is required");
+    if (!description.trim()) errors.push("Product description is required");
+    if (!category) errors.push("Product category is required");
+    
+    // Price validation
+    if (isNaN(price) || price <= 0) errors.push("Price must be greater than 0");
+    if (isNaN(discount) || discount < 0 || discount > 100) errors.push("Discount must be between 0 and 100");
+    
+    // Capital validation
+    if (isNaN(capital) || capital < 0) errors.push("Capital must be a non-negative number");
+    if (isNaN(vat) || vat < 0) errors.push("VAT must be a non-negative number");
+    
+    // Weight validation
+    if (isNaN(weight) || weight <= 0) errors.push("Weight must be greater than 0");
+
+    // Image validation
+    if (!image1) errors.push("At least one product image is required");
+    
+    // Variation validation
     if (variations.length === 0) {
-      return false;
+      errors.push("At least one variation is required");
+    } else {
+      const variationErrors = validateVariations();
+      if (variationErrors.length > 0) {
+        errors.push(...variationErrors);
+      }
     }
 
-    for (const variation of variations) {
+    return errors;
+  };
+
+  const validateVariations = () => {
+    const errors = [];
+    const MAX_VARIATIONS = 5;
+    const MAX_OPTIONS = 10;
+
+    if (variations.length > MAX_VARIATIONS) {
+      errors.push(`Maximum ${MAX_VARIATIONS} variations allowed`);
+      return errors;
+    }
+
+    for (const [index, variation] of variations.entries()) {
       if (!variation.name.trim()) {
-        return false;
+        errors.push(`Variation ${index + 1} name is required`);
       }
 
       if (variation.options.length === 0) {
-        return false;
+        errors.push(`Variation ${index + 1} must have at least one option`);
+      } else if (variation.options.length > MAX_OPTIONS) {
+        errors.push(`Variation ${index + 1} cannot have more than ${MAX_OPTIONS} options`);
       }
 
-      for (const option of variation.options) {
-        if (!option.name.trim() || isNaN(option.quantity) || option.quantity < 0) {
-          return false;
+      for (const [optionIndex, option] of variation.options.entries()) {
+        if (!option.name.trim()) {
+          errors.push(`Option ${optionIndex + 1} in variation ${index + 1} must have a name`);
+        }
+        if (isNaN(option.priceAdjustment)) {
+          errors.push(`Option ${optionIndex + 1} in variation ${index + 1} must have a valid price adjustment`);
+        }
+        if (isNaN(option.quantity) || option.quantity < 0) {
+          errors.push(`Option ${optionIndex + 1} in variation ${index + 1} must have a valid quantity`);
         }
       }
     }
 
-    return true;
+    return errors;
   };
 
   const onSubmitHandler = async (e) => {
@@ -259,105 +307,66 @@ const Add = () => {
     setVariationError(false);
 
     if (!token) {
-      alert("Authentication failed. Please log in again.");
+      toast.error("Authentication failed. Please log in again.");
       setIsSubmitting(false);
       return;
     }
-     // Check if the first image is uploaded
-   if (!image1) {
-    alert("Please upload at least one product image");
-    setIsSubmitting(false);
-    return;
-  }
-  if (!image1) {
-    alert("Please upload at least one product image");
-    setIsSubmitting(false);
-    return;
-  }
 
-    // Validate variations
-    const isValid = validateVariations();
-    if (!isValid) {
-      setVariationError(true);
+    // Validate all fields
+    const validationErrors = validateProduct();
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0]);
       setIsSubmitting(false);
-      alert("Please complete all variation fields before submitting");
       return;
     }
-
-    // Calculate total quantity from variations
-    const totalQuantity = calculateTotalQuantity();
 
     try {
       const formData = new FormData();
-      formData.append("name", name);
-      formData.append("description", description);
+      formData.append("name", name.trim());
+      formData.append("description", description.trim());
       formData.append("price", Number(price));
       formData.append("additionalCapital", JSON.stringify(additionalCapital));
       formData.append("vat", Number(vat));
       formData.append("capital", Number(capital));
-      formData.append("quantity", totalQuantity);
+      formData.append("quantity", calculateTotalQuantity());
       formData.append("category", category);
       formData.append("bestseller", bestseller ? "true" : "false");
       formData.append("discount", Number(discount));
       formData.append("weight", Number(weight));
       formData.append("variations", JSON.stringify(variations));
 
-      if (image1) formData.append("image1", image1);
-      if (image2) formData.append("image2", image2);
-      if (image3) formData.append("image3", image3);
-      if (image4) formData.append("image4", image4);
-      if (video) formData.append("video", video);
+      // Handle image uploads with validation
+      const imageFiles = [image1, image2, image3, image4].filter(Boolean);
+      for (const [index, file] of imageFiles.entries()) {
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(`Image ${index + 1} size should be less than 5MB`);
+        }
+        formData.append(`image${index + 1}`, file);
+      }
 
-      await axios.post(`${backendUrl}/api/product/add`, formData, {
+      if (video) {
+        if (video.size > 50 * 1024 * 1024) {
+          throw new Error("Video size should be less than 50MB");
+        }
+        formData.append("video", video);
+      }
+
+      const response = await axios.post(`${backendUrl}/api/product/add`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
 
-      alert("Product added successfully!");
-      setName("");
-      setDescription("");
-      setPrice("");
-      setCapital("");
-      setAdditionalCapital({
-        type: "fixed",
-        value: "",
-      });
-      setVat("");
-      setQuantity(1);
-      setDiscount("");
-      setWeight("");
-      setCategory(categories.length > 0 ? categories[0].name : "");
-      setBestseller(false);
-      setImage1(null);
-      setImage2(null);
-      setImage3(null);
-      setImage4(null);
-      setVideo(null);
-      setVariations([
-        {
-          name: "",
-          options: [
-            {
-              name: "",
-              priceAdjustment: undefined,
-              quantity: undefined,
-              sku: "",
-            },
-          ],
-        },
-      ]);
-      setVariationError(false);
+      if (response.data.success) {
+        toast.success("Product added successfully!");
+        // Reset form or redirect
+      } else {
+        throw new Error(response.data.message || "Failed to add product");
+      }
     } catch (error) {
-      console.error(
-        "Error adding product:",
-        error.response?.data || error.message
-      );
-      alert(
-        error.response?.data?.message ||
-          "Something went wrong. Please try again!"
-      );
+      console.error("Error adding product:", error);
+      toast.error(error.message || "Failed to add product. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
