@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { backendUrl } from "../App"; // Update this based on your setup
 import { toast } from "react-toastify";
 import {
   FaPlus, FaList, FaBox, FaUsers, FaTachometerAlt,
@@ -10,6 +9,7 @@ import {
   FaChevronDown, FaChevronUp, FaUserShield, FaUser, FaUserTie, FaSearch, FaFilter
 } from 'react-icons/fa';
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const UserPermissionManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);

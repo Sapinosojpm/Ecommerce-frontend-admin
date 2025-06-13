@@ -45,7 +45,7 @@ import AdminReturns from './components/AdminReturns';
 import AboutPage from './components/AboutPageEditor';
 import ContactPage from './components/ContactPageEditor';
 import PopupManager from './components/PopupManager';
-import AdminLiveChat from './components/AdminLiveChat';
+// import AdminLiveChat from './components/AdminLiveChat';
 import BotHelloLottie from './components/BotHelloLottie';
 import { Bot } from 'lucide-react';
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -146,11 +146,11 @@ const App = () => {
                 >
                   <BotHelloLottie />
                   <Routes location={location} key={location.pathname}>
-                    <Route path='/admin-live-chat' element={<AdminLiveChat token={token} />} />
+                    {/* <Route path='/admin-live-chat' element={<AdminLiveChat token={token} />} /> */}
                     <Route path='/popup' element={<PopupManager token={token} />} />
                     <Route path='/contact-page' element={<ContactPage token={token} />} />
                     <Route path='/about-page' element={<AboutPage token={token} />} />
-                    <Route path='/return' element={<AdminReturns token={token} />} />
+                    {/* <Route path='/return' element={<AdminReturns token={token} />} /> */}
                     <Route path='/add' element={<Add token={token} />} />
                     <Route path='/list' element={<List token={token} />} />
                     <Route path='/orders' element={<Orders token={token} />} />
