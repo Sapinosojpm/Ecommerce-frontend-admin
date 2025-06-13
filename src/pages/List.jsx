@@ -14,8 +14,12 @@ import {
   FaSort,
   FaSearch,
   FaEye,
+<<<<<<< HEAD
   FaBox,
   FaImage
+=======
+  FaBox
+>>>>>>> a571dc5946f433ea5ef86e4eae318f807d6c2f78
 } from 'react-icons/fa';
 import { backendUrl, currency } from "../App";
 import Papa from "papaparse";
@@ -44,7 +48,10 @@ const List = ({ token }) => {
     showLowStockOnly: false,
     showVariationsModal: false,
     selectedProduct: null,
+<<<<<<< HEAD
     showImageEditor: false,
+=======
+>>>>>>> a571dc5946f433ea5ef86e4eae318f807d6c2f78
   });
 
   const fileInputRef = useRef(null);
@@ -1097,6 +1104,7 @@ const List = ({ token }) => {
                   }`}
                 >
                   <td className="sticky left-0 z-10 px-6 py-4 bg-white whitespace-nowrap">
+<<<<<<< HEAD
                     <div className="flex gap-2">
                       {product.image?.slice(0, 3).map((img, index) => (
                         <img
@@ -1112,6 +1120,17 @@ const List = ({ token }) => {
                         </div>
                       )}
                     </div>
+=======
+                    <img
+                      src={product?.image?.[0] || ""}
+                      alt={product?.name || "Product"}
+                      className="object-cover w-12 h-12 rounded"
+                      onError={(e) => {
+                        e.target.src = "https://via.placeholder.com/50";
+                        e.target.alt = "Placeholder image";
+                      }}
+                    />
+>>>>>>> a571dc5946f433ea5ef86e4eae318f807d6c2f78
                   </td>
                   <td className="md:static lg:sticky left-[80px] px-6 py-4 text-sm text-gray-900 whitespace-nowrap bg-white z-10">
                     <div className="flex items-center gap-2 max-w-[200px] overflow-hidden text-ellipsis">
@@ -1503,6 +1522,7 @@ const List = ({ token }) => {
                       >
                         <FaTrash />
                       </button>
+<<<<<<< HEAD
                       <button
                         onClick={() => {
                           setState(prev => ({
@@ -1516,6 +1536,8 @@ const List = ({ token }) => {
                       >
                         <FaImage />
                       </button>
+=======
+>>>>>>> a571dc5946f433ea5ef86e4eae318f807d6c2f78
                     </div>
                   </td>
                 </tr>
@@ -1716,6 +1738,7 @@ const List = ({ token }) => {
           </div>
         </div>
       )}
+<<<<<<< HEAD
 
       {/* Image Editor Modal */}
       {state.showImageEditor && state.selectedProduct && (
@@ -1743,6 +1766,8 @@ const List = ({ token }) => {
           </div>
         </div>
       )}
+=======
+>>>>>>> a571dc5946f433ea5ef86e4eae318f807d6c2f78
     </div>
   );
 };
