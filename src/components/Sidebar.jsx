@@ -184,6 +184,7 @@ const Sidebar = () => {
     return userPermissions[permissionKey] === true;
   }, [initialLoading, userRole, userPermissions]);
 
+<<<<<<< HEAD
   // Filter menu sections based on permissions
   const filteredSections = MENU_SECTIONS
     .map(section => ({
@@ -191,6 +192,51 @@ const Sidebar = () => {
       items: section.items.filter(item => hasPermission(item.permission))
     }))
     .filter(section => section.items.length > 0);
+=======
+  // Menu items configuration
+  const menuSections = [
+    {
+      title: 'Main Menu',
+      items: [
+        { path: '/orderAnalytics', icon: <FaTachometerAlt />, text: 'Dashboard', permission: 'dashboard' },
+        { path: '/add', icon: <FaPlus />, text: 'Add items', permission: 'addItems' },
+        { path: '/list', icon: <FaList />, text: 'List items', permission: 'listItems' },
+        { path: '/orders', icon: <FaBox />, text: 'Orders', permission: 'orders' },
+        // { path: '/return', icon: <FaBox />, text: 'Returns', permission: 'returns' },
+        { path: '/users', icon: <FaUsers />, text: 'Users', permission: 'users' },
+        // { path: '/admin-live-chat', icon: <FaComments />, text: 'Live Chat', permission: 'adminLiveChat' },
+      ]
+    },
+    {
+      title: 'E-Commerce',
+      items: [
+  
+        { path: '/voucheramount', icon: <FaPercentage />, text: 'Voucher Amount', permission: 'voucherAmount' },
+        { path: '/category', icon: <FaClipboard />, text: 'Category', permission: 'category' },
+        { path: '/region', icon: <FaMapMarkerAlt />, text: 'Region Fee', permission: 'regionFee' },
+        { path: '/weight', icon: <FaClipboard />, text: 'Fee/Kilo', permission: 'feeKilo' },
+        { path: '/deals', icon: <FaPercentage />, text: 'Deals', permission: 'deals' },
+      ]
+    },
+    {
+      title: 'Content',
+      items: [
+        { path: '/homepage', icon: <FaHome />, text: 'Home Page', permission: 'homepage' },
+        { path: '/about-page', icon: <FaQuestionCircle />, text: 'About Page', permission: 'aboutPage' },
+        { path: '/contact-page', icon: <FaPhoneAlt />, text: 'Contact Page', permission: 'contactPage' },
+        { path: '/popup', icon: <FaComments />, text: 'Popup Manager', permission: 'popupManager' },
+        { path: '/addCard', icon: <FaClipboard />, text: 'Portfolio', permission: 'portfolio' },
+      ]
+    },
+    // {
+    //   title: 'Account',
+    //   items: [
+    //     { path: '/profile', icon: <FaUserCog />, text: 'My Profile', permission: 'dashboard' },
+    //     { path: '/change-password', icon: <FaLock />, text: 'Change Password', permission: 'dashboard' },
+    //   ]
+    // }
+  ];
+>>>>>>> 2d95fbd79c81019995c70042fc55f40a96e9764a
 
   // Handle retry after error
   const handleRetry = () => {
