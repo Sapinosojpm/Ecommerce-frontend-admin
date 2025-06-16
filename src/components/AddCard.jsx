@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { backendUrl } from "../App"; // Adjust if needed
 
-const AddCard = ({ token }) => {
+const AddCard = () => {
     const [image, setImage] = useState(null);
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
     const [cards, setCards] = useState([]);
-
+    const token = localStorage.getItem("authToken");
     // Fetch the list of cards from the backend
     const fetchCards = async () => {
         try {
@@ -110,11 +110,11 @@ const AddCard = ({ token }) => {
     };
 
     return (
-        <div className="flex flex-col w-full items-start gap-6">
+        <div className="flex flex-col items-start w-full gap-6">
             {error && <p className="text-red-600">{error}</p>}
 
             {/* Add Card Form */}
-            <form onSubmit={onSubmitHandler} className="flex flex-col w-full items-start gap-3">
+            <form onSubmit={onSubmitHandler} className="flex flex-col items-start w-full gap-3">
                 <div className="w-full">
                     <p className="mb-2">Upload Card Image</p>
 
@@ -131,7 +131,7 @@ const AddCard = ({ token }) => {
                     {image && (
                         <div className="mt-3">
                             <img
-                                className="w-24 h-24 object-cover border border-gray-300 rounded"
+                                className="object-cover w-24 h-24 border border-gray-300 rounded"
                                 src={URL.createObjectURL(image)}
                                 alt="Preview"
                             />
@@ -162,27 +162,27 @@ const AddCard = ({ token }) => {
                     />
                 </div>
 
-                <button type="submit" className="w-28 py-3 mt-4 bg-green-600 hover:bg-green-800 text-white rounded" disabled={isSubmitting}>
+                <button type="submit" className="py-3 mt-4 text-white bg-green-600 rounded w-28 hover:bg-green-800" disabled={isSubmitting}>
                     {isSubmitting ? "Adding..." : "ADD"}
                 </button>
             </form>
 
             {/* List of Cards with Scrollable Container */}
             <div className="mt-8 w-full max-h-[500px] overflow-y-auto border border-gray-300 rounded-lg p-4">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">List of Cards</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <h2 className="mb-4 text-2xl font-semibold text-gray-800">List of Cards</h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {cards.length === 0 ? (
                         <p className="text-gray-500">No cards found.</p>
                     ) : (
                         cards.map((card) => (
-                            <div key={card._id} className="border p-4 rounded-lg shadow-lg">
+                            <div key={card._id} className="p-4 border rounded-lg shadow-lg">
                                 <img
                                     src={card.image || "https://via.placeholder.com/150"}
                                     alt={card.name}
-                                    className="w-full h-48 object-cover rounded-md mb-4"
+                                    className="object-cover w-full h-48 mb-4 rounded-md"
                                 />
-                                <h3 className="font-semibold text-xl">{card.name}</h3>
-                                <p className="text-gray-600 mt-2">{card.description}</p>
+                                <h3 className="text-xl font-semibold">{card.name}</h3>
+                                <p className="mt-2 text-gray-600">{card.description}</p>
                                 <button
                                     onClick={() => handleRemoveCard(card._id)}
                                     className="mt-4 text-red-600 hover:text-red-800"

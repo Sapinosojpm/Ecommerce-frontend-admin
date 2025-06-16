@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ContactSection from "./ContactSection";
-import AdminDiscount from "./adminDiscount";
+import Newsletter from "./NewsletterDiscount";
 const componentEditors = {
     "Contact Us": ContactSection,
-    "Newsletter Discount": AdminDiscount,
+    "Newsletter Discount": Newsletter,
 
   
 
@@ -20,7 +20,7 @@ const HomePageEditor = () => {
     <div className="min-h-screen p-6 bg-gray-50">
       <div className="mx-auto max-w-7xl">
         <header className="mb-8">
-          <h2 className="mb-2 text-3xl font-bold text-gray-900">Manage About Page</h2>
+          <h2 className="mb-2 text-3xl font-bold text-gray-900">Manage Contact Page</h2>
         </header>
 
         {/* Modern Tabs */}

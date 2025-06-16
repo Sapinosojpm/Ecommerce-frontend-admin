@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { backendUrl } from "../App"; // Update this based on your setup
 import { toast } from "react-toastify";
 import {
   FaPlus, FaList, FaBox, FaUsers, FaTachometerAlt,
@@ -10,6 +9,7 @@ import {
   FaChevronDown, FaChevronUp, FaUserShield, FaUser, FaUserTie, FaSearch, FaFilter
 } from 'react-icons/fa';
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const UserPermissionManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -493,9 +493,17 @@ const UserPermissionManagement = () => {
                       <div className="flex flex-col justify-between gap-6 p-6 md:flex-row md:items-center">
                         <div className="flex items-center gap-4">
                           <div className="relative">
-                            <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full">
-                              <FaUserShield className="text-xl text-yellow-600" />
-                            </div>
+                            {user.profilePicture ? (
+                              <img 
+                                src={user.profilePicture} 
+                                alt={`${user.firstName} ${user.lastName}`}
+                                className="object-cover w-12 h-12 rounded-full border-2 border-yellow-200"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full">
+                                <FaUserShield className="text-xl text-yellow-600" />
+                              </div>
+                            )}
                           </div>
                           <div>
                             <h3 className="text-lg font-bold text-gray-900">{user.firstName} {user.lastName}</h3>
@@ -554,9 +562,17 @@ const UserPermissionManagement = () => {
                         <div className="flex flex-col justify-between gap-6 p-6 md:flex-row md:items-center">
                           <div className="flex items-center gap-4">
                             <div className="relative">
-                              <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full">
-                                <FaUserTie className="text-xl text-blue-600" />
-                              </div>
+                              {user.profilePicture ? (
+                                <img 
+                                  src={user.profilePicture} 
+                                  alt={`${user.firstName} ${user.lastName}`}
+                                  className="object-cover w-12 h-12 rounded-full border-2 border-blue-200"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full">
+                                  <FaUserTie className="text-xl text-blue-600" />
+                                </div>
+                              )}
                             </div>
                             <div>
                               <h3 className="text-lg font-bold text-gray-900">{user.firstName} {user.lastName}</h3>
@@ -668,9 +684,17 @@ const UserPermissionManagement = () => {
                       <div className="flex flex-col justify-between gap-6 p-6 md:flex-row md:items-center">
                         <div className="flex items-center gap-4">
                           <div className="relative">
-                            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full">
-                              <FaUser className="text-xl text-gray-600" />
-                            </div>
+                            {user.profilePicture ? (
+                              <img 
+                                src={user.profilePicture} 
+                                alt={`${user.firstName} ${user.lastName}`}
+                                className="object-cover w-12 h-12 rounded-full border-2 border-gray-200"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full">
+                                <FaUser className="text-xl text-gray-600" />
+                              </div>
+                            )}
                           </div>
                           <div>
                             <h3 className="text-lg font-bold text-gray-900">{user.firstName} {user.lastName}</h3>

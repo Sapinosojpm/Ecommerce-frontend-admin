@@ -23,7 +23,7 @@ import FooterSection from './components/FooterSection';
 import EventCalendar from './components/EventCalendar';
 import JobPopupEditor from './components/JobPopupEditor';
 import AdminYoutubeEditor from './components/AdminYoutubeEditor';
-import AdminDiscount from './components/adminDiscount';
+import NewsLetter from './components/NewsletterDiscount';
 import FAQ from './components/AdminFAQPage';
 import AutoLogout from './components/AutoLogout';
 import LogoEditor from './components/LogoEditor';
@@ -45,7 +45,7 @@ import AdminReturns from './components/AdminReturns';
 import AboutPage from './components/AboutPageEditor';
 import ContactPage from './components/ContactPageEditor';
 import PopupManager from './components/PopupManager';
-import AdminLiveChat from './components/AdminLiveChat';
+// import AdminLiveChat from './components/AdminLiveChat';
 import BotHelloLottie from './components/BotHelloLottie';
 import { Bot } from 'lucide-react';
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -146,11 +146,11 @@ const App = () => {
                 >
                   <BotHelloLottie />
                   <Routes location={location} key={location.pathname}>
-                    <Route path='/admin-live-chat' element={<AdminLiveChat token={token} />} />
+                    {/* <Route path='/admin-live-chat' element={<AdminLiveChat token={token} />} /> */}
                     <Route path='/popup' element={<PopupManager token={token} />} />
                     <Route path='/contact-page' element={<ContactPage token={token} />} />
                     <Route path='/about-page' element={<AboutPage token={token} />} />
-                    <Route path='/return' element={<AdminReturns token={token} />} />
+                    {/* <Route path='/return' element={<AdminReturns token={token} />} /> */}
                     <Route path='/add' element={<Add token={token} />} />
                     <Route path='/list' element={<List token={token} />} />
                     <Route path='/orders' element={<Orders token={token} />} />
@@ -169,7 +169,7 @@ const App = () => {
                     <Route path='/eventCalendar' element={<EventCalendar token={token} />} />
                     <Route path='/job' element={<JobPopupEditor token={token} />} />
                     <Route path='/youtubeUrl' element={<AdminYoutubeEditor token={token} />} />
-                    <Route path='/adminDiscount' element={<AdminDiscount token={token} />} />
+                    <Route path='/newsletter' element={<NewsLetter token={token} />} />
                     <Route path='/faq' element={<FAQ token={token} />} />
                     <Route path='/logo' element={<LogoEditor token={token} />} />
                     <Route path='/policy' element={<Policy token={token} />} />

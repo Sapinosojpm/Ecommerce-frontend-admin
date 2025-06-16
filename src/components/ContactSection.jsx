@@ -11,8 +11,14 @@ const ContactSection = () => {
   });
   const [contactImageFile, setContactImageFile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-
+  const [show,setShow] = useState(false);
   const backendUrl = import.meta.env.VITE_BACKEND_URL; // Set the correct backend URL here
+
+  const handleShow = () => {
+    setShow(!show);
+  }
+  
+
 
   // Fetch contact data when the component mounts
   useEffect(() => {
@@ -58,19 +64,20 @@ const ContactSection = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <button
-        onClick={() => setIsEditing(!isEditing)}
-        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 mb-6"
-      >
-        {isEditing ? 'Cancel Editing' : 'Edit Contact Section'}
-      </button>
+    <div className="max-w-4xl p-6 mx-auto">
+     <button
+  onClick={handleShow}
+  className="px-6 py-3 mb-6 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+>
+  {show ? 'Cancel Editing' : 'Edit Contact Section'}
+</button>
 
-      {isEditing ? (
-        <form onSubmit={handleContactSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-lg">
+
+      {show ? (
+        <form onSubmit={handleContactSubmit} className="p-8 space-y-6 bg-white shadow-lg rounded-xl">
           {/* Business Name */}
           <div>
-            <label htmlFor="businessName" className="block text-lg font-medium text-gray-700 mb-2">Business Name</label>
+            <label htmlFor="businessName" className="block mb-2 text-lg font-medium text-gray-700">Business Name</label>
             <input
               type="text"
               id="businessName"
@@ -83,7 +90,7 @@ const ContactSection = () => {
 
           {/* Address */}
           <div>
-            <label htmlFor="address" className="block text-lg font-medium text-gray-700 mb-2">Address</label>
+            <label htmlFor="address" className="block mb-2 text-lg font-medium text-gray-700">Address</label>
             <input
               type="text"
               id="address"
@@ -96,7 +103,7 @@ const ContactSection = () => {
 
           {/* Telephone Numbers */}
           <div>
-            <label htmlFor="telephone" className="block text-lg font-medium text-gray-700 mb-2">Telephone</label>
+            <label htmlFor="telephone" className="block mb-2 text-lg font-medium text-gray-700">Telephone</label>
             <input
               type="text"
               id="telephone"
@@ -112,7 +119,7 @@ const ContactSection = () => {
 
           {/* Emails */}
           <div>
-            <label htmlFor="email" className="block text-lg font-medium text-gray-700 mb-2">Email</label>
+            <label htmlFor="email" className="block mb-2 text-lg font-medium text-gray-700">Email</label>
             <input
               type="text"
               id="email"
@@ -128,31 +135,31 @@ const ContactSection = () => {
 
           {/* Image */}
           <div>
-            <label htmlFor="image" className="block text-lg font-medium text-gray-700 mb-2">Image</label>
+            <label htmlFor="image" className="block mb-2 text-lg font-medium text-gray-700">Image</label>
             <input
               type="file"
               id="image"
               onChange={(e) => setContactImageFile(e.target.files[0])}
-              className="block w-full text-sm text-gray-700 py-2 px-4 bg-gray-50 border border-gray-300 rounded-md"
+              className="block w-full px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md bg-gray-50"
             />
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 mt-6"
+            className="px-6 py-3 mt-6 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
           >
             Save Changes
           </button>
         </form>
       ) : (
-        <div className="bg-white p-8 rounded-xl shadow-lg">
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">{contactData.businessName}</h2>
-          <p className="text-lg text-gray-600 mb-2">{contactData.address}</p>
-          <p className="text-lg text-gray-600 mb-2">
+        <div className="p-8 bg-white shadow-lg rounded-xl">
+          <h2 className="mb-4 text-3xl font-bold text-gray-800">{contactData.businessName}</h2>
+          <p className="mb-2 text-lg text-gray-600">{contactData.address}</p>
+          <p className="mb-2 text-lg text-gray-600">
             {contactData.telephone.join(', ')}
           </p>
-          <p className="text-lg text-gray-600 mb-2">
+          <p className="mb-2 text-lg text-gray-600">
             {contactData.email.join(', ')}
           </p>
           <div>

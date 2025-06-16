@@ -59,9 +59,9 @@ const AdminDiscount = () => {
   };
 
   return (
-    <div className="flex justify-center items-start m-5 min-h-screen ">
-      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold text-gray-700 text-center">{discountId ? "Update" : "Add"} Discount</h2>
+    <div className="flex items-start justify-center min-h-screen m-5 ">
+      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold text-center text-gray-700">{discountId ? "Update" : "Add"} Discount</h2>
 
         {message && <p className="mt-2 text-center text-red-500">{message}</p>}
 
@@ -70,7 +70,7 @@ const AdminDiscount = () => {
           placeholder="Discount Code"
           value={discountCode}
           onChange={(e) => setDiscountCode(e.target.value)}
-          className="w-full mt-4 px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+          className="w-full px-4 py-2 mt-4 border rounded-lg focus:outline-none focus:border-blue-500"
         />
 
         <input
@@ -78,12 +78,12 @@ const AdminDiscount = () => {
           placeholder="Discount Percentage"
           value={discountPercent}
           onChange={(e) => setDiscountPercent(e.target.value)}
-          className="w-full mt-4 px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+          className="w-full px-4 py-2 mt-4 border rounded-lg focus:outline-none focus:border-blue-500"
         />
 
         <button
           onClick={handleSaveDiscount}
-          className="w-full mt-4 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600"
+          className="w-full py-2 mt-4 text-white bg-indigo-500 rounded-lg hover:bg-indigo-600"
         >
           {discountId ? "Update Discount" : "Add Discount"}
         </button>

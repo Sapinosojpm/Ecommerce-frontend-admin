@@ -57,7 +57,7 @@ const FooterSection = () => {
       <h2 className="mb-6 text-xl font-semibold">Footer Section</h2>
       <button
         onClick={() => setIsEditing(!isEditing)}
-        className="px-6 py-3 mb-6 text-white bg-green-600 rounded-lg hover:bg-green-700"
+        className="px-6 py-3 mb-6 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
       >
         {isEditing ? 'Cancel Editing' : 'Edit Footer Section'}
       </button>
@@ -117,7 +117,7 @@ const FooterSection = () => {
           </div>
 
           {/* Footer Logo */}
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <label className="block text-sm font-medium">Footer Logo</label>
             <input
               type="file"
@@ -127,11 +127,11 @@ const FooterSection = () => {
             {footerData.logoUrl && !footerLogo && (
               <img src={footerData.logoUrl} alt="Footer Logo" className="h-auto max-w-full mt-2" />
             )}
-          </div>
+          </div> */}
 
           <button
             type="submit"
-            className="px-6 py-3 text-white bg-green-600 rounded-lg hover:bg-green-700"
+            className="px-6 py-3 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
           >
             Update Footer Section
           </button>
@@ -142,7 +142,7 @@ const FooterSection = () => {
           <p><strong>Company Links:</strong> {footerData.companyLinks.join(', ')}</p>
           <p><strong>Contact Information:</strong> {footerData.contactInfo.join(', ')}</p>
           <p><strong>Copyright Text:</strong> {footerData.copyrightText}</p>
-          {footerData.logoUrl && <img src={footerData.logoUrl} alt="Footer Logo" className="h-auto max-w-full mt-4" />}
+          {/* {footerData.logoUrl && <img src={footerData.logoUrl} alt="Footer Logo" className="h-auto max-w-full mt-4" />} */}
         </div>
       )}
     </div>

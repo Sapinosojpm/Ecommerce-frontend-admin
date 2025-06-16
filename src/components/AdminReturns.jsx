@@ -84,26 +84,24 @@ const AdminReturnsPage = () => {
 
   const handleAction = async (returnId, action, notes, refundAmount, refundMethod) => {
     try {
+      const payload = { 
+        returnId,
+        action,
+        notes,
+        refundAmount,
+        refundMethod
+      };
 
-      const payload = { action, notes, refundAmount, refundMethod };
-
-// Remove keys with undefined values
-Object.keys(payload).forEach(
-  (key) => payload[key] === undefined && delete payload[key]
-);
-      const token = localStorage.getItem('token');
+      // Remove keys with undefined values
+      Object.keys(payload).forEach(
+        (key) => payload[key] === undefined && delete payload[key]
+      );
+      const token = localStorage.getItem('authToken');
       // Updated to match the backend route and expected payload structure
-       console.log({ returnId, action, notes, refundAmount, refundMethod });
+      console.log(payload);
       await axios.post(
         `${backendUrl}/api/returns/${returnId}/process`,
-        { 
-         
-          returnId,
-          action,
-          notes,
-          refundAmount,
-          refundMethod
-        },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -134,7 +132,13 @@ Object.keys(payload).forEach(
       fetchReturns();
     } catch (err) {
       console.error('Error updating return status:', err);
-      setError('Failed to update return status: ' + (err.response?.data?.message || err.message));
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update return status';
+      setError(errorMessage);
+      
+      // If it's a network error, show a more specific message
+      if (err.message === 'Network Error') {
+        setError('Network error: Please check your internet connection and try again');
+      }
     }
   };
 
