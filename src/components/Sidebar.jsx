@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { NavLink, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import axios from 'axios';
+import PropTypes from 'prop-types';
 import {
   FaPlus, FaList, FaBox, FaUsers, FaTachometerAlt,
   FaStore, FaPercentage, FaShoppingCart, FaClipboard, FaMapMarkerAlt,
@@ -8,8 +8,86 @@ import {
   FaLock, FaUserCog, FaExclamationTriangle
 } from 'react-icons/fa';
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+// Constants
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const AUTH_TOKEN_KEY = 'authToken';
 
+// Menu Configuration
+const MENU_SECTIONS = [
+  {
+    title: 'Main Menu',
+    items: [
+      { path: '/orderAnalytics', icon: <FaTachometerAlt />, text: 'Dashboard', permission: 'dashboard' },
+      { path: '/add', icon: <FaPlus />, text: 'Add items', permission: 'addItems' },
+      { path: '/list', icon: <FaList />, text: 'List items', permission: 'listItems' },
+      { path: '/orders', icon: <FaBox />, text: 'Orders', permission: 'orders' },
+      { path: '/users', icon: <FaUsers />, text: 'Users', permission: 'users' },
+    ]
+  },
+  {
+    title: 'E-Commerce',
+    items: [
+      { path: '/voucheramount', icon: <FaPercentage />, text: 'Voucher Amount', permission: 'voucherAmount' },
+      { path: '/category', icon: <FaClipboard />, text: 'Category', permission: 'category' },
+      { path: '/region', icon: <FaMapMarkerAlt />, text: 'Region Fee', permission: 'regionFee' },
+      { path: '/weight', icon: <FaClipboard />, text: 'Fee/Kilo', permission: 'feeKilo' },
+      { path: '/deals', icon: <FaPercentage />, text: 'Deals', permission: 'deals' },
+    ]
+  },
+  {
+    title: 'Content',
+    items: [
+      { path: '/homepage', icon: <FaHome />, text: 'Home Page', permission: 'homepage' },
+      { path: '/about-page', icon: <FaQuestionCircle />, text: 'About Page', permission: 'aboutPage' },
+      { path: '/contact-page', icon: <FaPhoneAlt />, text: 'Contact Page', permission: 'contactPage' },
+      { path: '/popup', icon: <FaComments />, text: 'Popup Manager', permission: 'popupManager' },
+      { path: '/addCard', icon: <FaClipboard />, text: 'Portfolio', permission: 'portfolio' },
+    ]
+  },
+];
+
+// Permission Map for Route Guards
+const PERMISSION_MAP = {
+  '/orderAnalytics': 'dashboard',
+  '/add': 'addItems',
+  '/list': 'listItems',
+  '/orders': 'orders',
+  '/return': 'returns',
+  '/users': 'users',
+  '/admin-live-chat': 'adminLiveChat',
+  '/ask-discount': 'askDiscount',
+  '/voucheramount': 'voucherAmount',
+  '/category': 'category',
+  '/region': 'regionFee',
+  '/weight': 'feeKilo',
+  '/deals': 'deals',
+  '/homepage': 'homepage',
+  '/about-page': 'aboutPage',
+  '/contact-page': 'contactPage',
+  '/popup': 'popupManager',
+  '/addCard': 'portfolio',
+  '/profile': 'dashboard',
+  '/change-password': 'dashboard'
+};
+
+// Styles
+const STYLES = {
+  active: "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg",
+  inactive: "text-indigo-100 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-indigo-500 hover:text-white hover:shadow-lg transition-all duration-200",
+  sidebar: "w-64 min-h-full text-sm font-medium bg-indigo-800 shadow-xl",
+  header: "px-6 py-8 border-b border-indigo-700",
+  menuSection: "px-4 py-4",
+  menuTitle: "mb-3 text-xs font-semibold tracking-wider text-indigo-300 uppercase",
+  menuItem: "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm",
+  footer: "absolute bottom-0 left-0 right-0 px-4 py-4 border-t border-indigo-700",
+  error: "p-3 mb-4 bg-red-900 rounded",
+  loading: "flex items-center justify-center w-64 min-h-full bg-indigo-800 shadow-xl",
+};
+
+/**
+ * Sidebar Component
+ * Main navigation component that handles user authentication, permissions, and menu rendering
+ */
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,43 +98,25 @@ const Sidebar = () => {
   const [error, setError] = useState(null);
   const [userDetails, setUserDetails] = useState({});
   
-  // Add ref to track if user data has been fetched
   const userDataFetched = useRef(false);
 
-  // Placeholder function for updateDropdowns - implement based on your needs
-  const updateDropdowns = useCallback((userData) => {
-    // Add your dropdown update logic here
-    console.log('Updating dropdowns with user data:', userData);
-    // Example implementation:
-    // if (userData.region) {
-    //   // Update region dropdown
-    // }
-    // if (userData.province) {
-    //   // Update province dropdown
-    // }
-  }, []);
-
-  // Fetch user details - modified to prevent unnecessary re-fetching
+  /**
+   * Fetches user details from the backend
+   * @param {boolean} forceRefresh - Whether to force a refresh of user data
+   */
   const fetchUserDetails = useCallback(async (forceRefresh = false) => {
-    // If user data already fetched and not forcing refresh, skip
-    if (userDataFetched.current && !forceRefresh) {
-      return;
-    }
+    if (userDataFetched.current && !forceRefresh) return;
 
     setInitialLoading(true);
     setError(null);
 
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (!token) {
-        setError("User not authenticated");
-        navigate("/login");
-        return;
+        throw new Error("User not authenticated");
       }
 
-      console.log('Fetching user profile from:', `${backendUrl}/api/profile`);
-
-      const response = await fetch(`${backendUrl}/api/profile`, {
+      const response = await fetch(`${BACKEND_URL}/api/profile`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -64,75 +124,47 @@ const Sidebar = () => {
         },
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Response error text:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Full API response:', data);
-
-      // More flexible response handling
-      if (data && (data.success !== false)) {
-        let user = null;
-        
-        // Try different possible response structures
-        if (data.user) {
-          user = data.user;
-        } else if (data.data && data.data.user) {
-          user = data.data.user;
-        } else if (data.data) {
-          user = data.data;
-        } else if (data._id || data.id) {
-          // The response itself might be the user object
-          user = data;
-        }
-
-        if (user && (user._id || user.id)) {
-          console.log("Processed User:", user);
-
-          setUserDetails(user);
-          setUserId(user._id || user.id);
-          setUserRole(user.role || 'user'); // Default to 'user' if no role
-          setUserPermissions(user.permissions || {});
-
-          // Mark user data as fetched
-          userDataFetched.current = true;
-
-          // Update dropdowns based on the user data
-          setTimeout(() => updateDropdowns(user), 100);
-        } else {
-          console.error('No valid user object found in response:', data);
-          throw new Error("No user data found in response");
-        }
-      } else {
-        console.error('API returned success: false or invalid response:', data);
-        throw new Error(data.message || "Invalid user response");
-      }
-    } catch (err) {
-      console.error("Error fetching user details:", err);
-      setError(err.message || "Failed to load user data");
       
-      // Only remove token and redirect if it's an auth error
-      if (err.message.includes('401') || err.message.includes('authentication') || err.message.includes('Unauthorized')) {
-        localStorage.removeItem("authToken");
+      if (!data || data.success === false) {
+        throw new Error(data?.message || "Invalid user response");
+      }
+
+      const user = data.user || data.data?.user || data.data || data;
+      
+      if (!user || (!user._id && !user.id)) {
+        throw new Error("No valid user data found in response");
+      }
+
+      setUserDetails(user);
+      setUserId(user._id || user.id);
+      setUserRole(user.role || 'user');
+      setUserPermissions(user.permissions || {});
+      userDataFetched.current = true;
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load user data";
+      setError(errorMessage);
+      
+      if (errorMessage.includes('401') || errorMessage.includes('authentication') || errorMessage.includes('Unauthorized')) {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
         navigate("/login");
       }
     } finally {
       setInitialLoading(false);
     }
-  }, [backendUrl, navigate, updateDropdowns]);
+  }, [navigate]);
 
-  // Initial fetch of user details - only run once
+  // Initial fetch of user details
   useEffect(() => {
     if (!userDataFetched.current) {
       fetchUserDetails();
     }
-  }, []); // Empty dependency array to run only once
+  }, []);
 
   // Redirect from root or login to dashboard
   useEffect(() => {
@@ -141,112 +173,48 @@ const Sidebar = () => {
     }
   }, [location.pathname, navigate, userRole]);
 
-  // Check if user has permission for specific routes
+  /**
+   * Checks if user has permission for specific routes
+   * @param {string} permissionKey - The permission key to check
+   * @returns {boolean} indicating if user has permission
+   */
   const hasPermission = useCallback((permissionKey) => {
-    // If still loading initially, don't show anything
     if (initialLoading || userRole === null) return false;
-    
-    // Admins have access to everything - bypass permission checks
     if (userRole === 'admin') return true;
-    
-    console.log('Checking permission:', permissionKey, 'for role:', userRole, 'with permissions:', userPermissions);
-    
-    // Check specific permission for non-admin users
     return userPermissions[permissionKey] === true;
   }, [initialLoading, userRole, userPermissions]);
 
-  // Menu items configuration
-  const menuSections = [
-    {
-      title: 'Main Menu',
-      items: [
-        { path: '/orderAnalytics', icon: <FaTachometerAlt />, text: 'Dashboard', permission: 'dashboard' },
-        { path: '/add', icon: <FaPlus />, text: 'Add items', permission: 'addItems' },
-        { path: '/list', icon: <FaList />, text: 'List items', permission: 'listItems' },
-        { path: '/orders', icon: <FaBox />, text: 'Orders', permission: 'orders' },
-        // { path: '/return', icon: <FaBox />, text: 'Returns', permission: 'returns' },
-        { path: '/users', icon: <FaUsers />, text: 'Users', permission: 'users' },
-        // { path: '/admin-live-chat', icon: <FaComments />, text: 'Live Chat', permission: 'adminLiveChat' },
-      ]
-    },
-    {
-      title: 'E-Commerce',
-      items: [
-  
-        { path: '/voucheramount', icon: <FaPercentage />, text: 'Voucher Amount', permission: 'voucherAmount' },
-        { path: '/category', icon: <FaClipboard />, text: 'Category', permission: 'category' },
-        { path: '/region', icon: <FaMapMarkerAlt />, text: 'Region Fee', permission: 'regionFee' },
-        { path: '/weight', icon: <FaClipboard />, text: 'Fee/Kilo', permission: 'feeKilo' },
-        { path: '/deals', icon: <FaPercentage />, text: 'Deals', permission: 'deals' },
-      ]
-    },
-    {
-      title: 'Content',
-      items: [
-        { path: '/homepage', icon: <FaHome />, text: 'Home Page', permission: 'homepage' },
-        { path: '/about-page', icon: <FaQuestionCircle />, text: 'About Page', permission: 'aboutPage' },
-        { path: '/contact-page', icon: <FaPhoneAlt />, text: 'Contact Page', permission: 'contactPage' },
-        { path: '/popup', icon: <FaComments />, text: 'Popup Manager', permission: 'popupManager' },
-        { path: '/addCard', icon: <FaClipboard />, text: 'Portfolio', permission: 'portfolio' },
-      ]
-    },
-    // {
-    //   title: 'Account',
-    //   items: [
-    //     { path: '/profile', icon: <FaUserCog />, text: 'My Profile', permission: 'dashboard' },
-    //     { path: '/change-password', icon: <FaLock />, text: 'Change Password', permission: 'dashboard' },
-    //   ]
-    // }
-  ];
+  // Filter menu sections based on permissions
+  const filteredSections = MENU_SECTIONS
+    .map(section => ({
+      ...section,
+      items: section.items.filter(item => hasPermission(item.permission))
+    }))
+    .filter(section => section.items.length > 0);
 
-  // Filter items based on permissions
-  const filteredSections = menuSections.map(section => ({
-    ...section,
-    items: section.items.filter(item => hasPermission(item.permission))
-  })).filter(section => section.items.length > 0);
-
-  const activeStyle = "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg";
-  const inactiveStyle = "text-indigo-100 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-indigo-500 hover:text-white hover:shadow-lg transition-all duration-200";
-
-  // Retry function
+  // Handle retry after error
   const handleRetry = () => {
     setError(null);
-    userDataFetched.current = false; // Reset the flag to allow refetch
-    fetchUserDetails(true); // Force refresh
+    userDataFetched.current = false;
+    fetchUserDetails(true);
   };
 
-  // Debug info component
-  const DebugInfo = () => {
-    if (process.env.NODE_ENV !== 'development') return null;
-    
-    return (
-      <div className="p-4 m-4 text-xs text-white bg-gray-800 rounded">
-        {/* <h4 className="font-bold">Debug Info:</h4> */}
-        {/* <p>Backend URL: {backendUrl}</p>
-        <p>User Role: {userRole}</p>
-        <p>User ID: {userId}</p>
-        <p>Permissions: {JSON.stringify(userPermissions)}</p>
-        <p>Token exists: {!!localStorage.getItem("authToken")}</p> */}
-      </div>
-    );
-  };
-
-  // Show loading only during initial load, not when navigating
+  // Loading state
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center w-64 min-h-full bg-indigo-800 shadow-xl">
+      <div className={STYLES.loading}>
         <div className="text-center text-white">
           <div className="animate-pulse">Loading permissions...</div>
-          <DebugInfo />
         </div>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="w-64 min-h-full p-4 text-red-200 bg-indigo-800 shadow-xl">
-        <div className="p-3 mb-4 bg-red-900 rounded">
+      <div className={STYLES.sidebar}>
+        <div className={STYLES.error}>
           <FaExclamationTriangle className="inline mr-2" />
           <div className="text-sm">{error}</div>
         </div>
@@ -256,72 +224,15 @@ const Sidebar = () => {
         >
           Try Again
         </button>
-        <DebugInfo />
       </div>
     );
   }
 
-  // Emergency admin access - if user is admin but no sections show up
-  if (userRole === 'admin' && filteredSections.length === 0) {
-    return (
-      <div className="w-64 min-h-full text-sm font-medium bg-indigo-800 shadow-xl">
-        <div className="px-6 py-8 border-b border-indigo-700">
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="mt-1 text-xs text-indigo-300">Admin Panel (Emergency Access)</p>
-        </div>
-
-        <div className="p-4">
-          <div className="p-3 text-center text-yellow-100 bg-yellow-900 rounded-lg">
-            <FaExclamationTriangle className="mx-auto mb-2 text-xl" />
-            <p className="font-bold">Permission System Error</p>
-            <p className="mt-2 text-xs">
-              Showing all menu items as fallback for admin user.
-            </p>
-          </div>
-        </div>
-
-        {/* Show all menu sections for admin */}
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-          {menuSections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="px-4 py-4">
-              <p className="mb-3 text-xs font-semibold tracking-wider text-indigo-300 uppercase">
-                {section.title}
-              </p>
-              <div className="space-y-1">
-                {section.items.map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-2.5 rounded-md text-sm ${isActive ? activeStyle : inactiveStyle}`
-                    }
-                  >
-                    <span className="text-base">
-                      {item.icon}
-                    </span>
-                    <span>{item.text}</span>
-                  </NavLink>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="absolute bottom-0 left-0 right-0 px-4 py-4 border-t border-indigo-700">
-          <div className="text-xs text-center text-indigo-300">
-            <p>Logged in as: <span className="font-semibold">{userId?.substring(0, 6)}...</span></p>
-            <p className="mt-1">Role: <span className="font-semibold text-green-300 capitalize">{userRole}</span></p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // If user has no permissions at all (non-admin)
+  // No permissions state
   if (filteredSections.length === 0) {
     return (
-      <div className="w-64 min-h-full text-sm font-medium bg-indigo-800 shadow-xl">
-        <div className="px-6 py-8 border-b border-indigo-700">
+      <div className={STYLES.sidebar}>
+        <div className={STYLES.header}>
           <h1 className="text-2xl font-bold text-white">Dashboard</h1>
           <p className="mt-1 text-xs text-indigo-300">
             {userRole === 'admin' ? 'Admin Panel' : 'User Panel'}
@@ -338,32 +249,30 @@ const Sidebar = () => {
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 px-4 py-4 border-t border-indigo-700">
+        <div className={STYLES.footer}>
           <div className="text-xs text-center text-indigo-300">
             <p>Role: <span className="font-semibold capitalize">{userRole}</span></p>
             <p className="mt-1">Dashboard v2.0</p>
           </div>
         </div>
-        <DebugInfo />
       </div>
     );
   }
 
+  // Main sidebar render
   return (
-    <div className="w-64 min-h-full text-sm font-medium bg-indigo-800 shadow-xl">
-      {/* Logo/Header */}
-      <div className="px-6 py-8 border-b border-indigo-700">
+    <div className={STYLES.sidebar}>
+      <div className={STYLES.header}>
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
         <p className="mt-1 text-xs text-indigo-300">
           {userRole === 'admin' ? 'Admin Panel' : 'User Panel'}
         </p>
       </div>
 
-      {/* Menu Sections */}
       <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
         {filteredSections.map((section, sectionIndex) => (
-          <div key={sectionIndex} className="px-4 py-4">
-            <p className="mb-3 text-xs font-semibold tracking-wider text-indigo-300 uppercase">
+          <div key={sectionIndex} className={STYLES.menuSection}>
+            <p className={STYLES.menuTitle}>
               {section.title}
             </p>
             <div className="space-y-1">
@@ -372,7 +281,7 @@ const Sidebar = () => {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-2.5 rounded-md text-sm ${isActive ? activeStyle : inactiveStyle}`
+                    `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
                   }
                 >
                   <span className="text-base">
@@ -386,8 +295,7 @@ const Sidebar = () => {
         ))}
       </div>
 
-      {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 py-4 border-t border-indigo-700">
+      <div className={STYLES.footer}>
         <div className="text-xs text-center text-indigo-300">
           <p>Logged in as: <span className="font-semibold">{userId?.substring(0, 6)}...</span></p>
           <p className="mt-1">Role: <span className="font-semibold capitalize">{userRole}</span></p>
@@ -398,45 +306,34 @@ const Sidebar = () => {
           )}
         </div>
       </div>
-      <DebugInfo />
     </div>
   );
 };
 
-// Permission Guard Component
+/**
+ * Permission Guard Component
+ * Wraps components that require specific permissions
+ */
 export const PermissionGuard = ({ children, requiredPermission, userRole, userPermissions }) => {
-  if (userRole === 'admin') return children;
-  if (userPermissions && userPermissions[requiredPermission]) return children;
+  if (userRole === 'admin') return <>{children}</>;
+  if (userPermissions && userPermissions[requiredPermission]) return <>{children}</>;
   return <Navigate to="/orderAnalytics" replace />;
 };
 
-// Route Permission Guard Component
-export const RoutePermissionGuard = ({ children, path, userRole, userPermissions }) => {
-  const permissionMap = {
-    '/orderAnalytics': 'dashboard',
-    '/add': 'addItems',
-    '/list': 'listItems',
-    '/orders': 'orders',
-    '/return': 'returns',
-    '/users': 'users',
-    '/admin-live-chat': 'adminLiveChat',
-    '/ask-discount': 'askDiscount',
-    '/voucheramount': 'voucherAmount',
-    '/category': 'category',
-    '/region': 'regionFee',
-    '/weight': 'feeKilo',
-    '/deals': 'deals',
-    '/homepage': 'homepage',
-    '/about-page': 'aboutPage',
-    '/contact-page': 'contactPage',
-    '/popup': 'popupManager',
-    '/addCard': 'portfolio',
-    '/profile': 'dashboard',
-    '/change-password': 'dashboard'
-  };
+PermissionGuard.propTypes = {
+  children: PropTypes.node.isRequired,
+  requiredPermission: PropTypes.string.isRequired,
+  userRole: PropTypes.string,
+  userPermissions: PropTypes.object.isRequired
+};
 
-  const requiredPermission = permissionMap[path] || null;
-  if (!requiredPermission) return children;
+/**
+ * Route Permission Guard Component
+ * Wraps routes with permission checks
+ */
+export const RoutePermissionGuard = ({ children, path, userRole, userPermissions }) => {
+  const requiredPermission = PERMISSION_MAP[path] || null;
+  if (!requiredPermission) return <>{children}</>;
 
   return (
     <PermissionGuard 
@@ -447,6 +344,13 @@ export const RoutePermissionGuard = ({ children, path, userRole, userPermissions
       {children}
     </PermissionGuard>
   );
+};
+
+RoutePermissionGuard.propTypes = {
+  children: PropTypes.node.isRequired,
+  path: PropTypes.string.isRequired,
+  userRole: PropTypes.string,
+  userPermissions: PropTypes.object.isRequired
 };
 
 export default Sidebar;
