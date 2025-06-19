@@ -11,7 +11,8 @@ import {
   FiX,
   FiPlus,
   FiExternalLink,
-  FiRefreshCw
+  FiRefreshCw,
+  FiMapPin
 } from 'react-icons/fi';
 
 const AdminOrders = ({ token }) => {
@@ -28,14 +29,25 @@ const AdminOrders = ({ token }) => {
   const [showAddTrackingModal, setShowAddTrackingModal] = useState(false);
   const [carriers, setCarriers] = useState([]);
   const [trackingForm, setTrackingForm] = useState({
-    trackingNumber: '',
-    carrierCode: ''
-  });
+  trackingNumber: '',
+  carrierCode: 'jtexpress-ph'
+});
   const [selectedOrderForTracking, setSelectedOrderForTracking] = useState(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
+  const [loadingCarriers, setLoadingCarriers] = useState(false);
   const canvasRef = useRef(null);
-
-  // Define tabs with their corresponding statuses and colors
+const MANUAL_CARRIERS = [
+  { carrier_code: 'jtexpress-ph', carrier_name: 'J&T Express Philippines' },
+  { carrier_code: 'lbc', carrier_name: 'LBC Express' },
+  { carrier_code: 'phlpost', carrier_name: 'Philippine Post' },
+  { carrier_code: 'ninjavan-ph', carrier_name: 'Ninja Van Philippines' },
+  { carrier_code: '2go', carrier_name: '2GO Express' },
+  { carrier_code: 'flash-express-ph', carrier_name: 'Flash Express Philippines' },
+  { carrier_code: 'grab-express-ph', carrier_name: 'Grab Express Philippines' },
+  { carrier_code: 'lalamove-ph', carrier_name: 'Lalamove Philippines' },
+  { carrier_code: 'dhl-ph', carrier_name: 'DHL Philippines' },
+  { carrier_code: 'fedex-ph', carrier_name: 'FedEx Philippines' }
+];
   const tabs = [
     { id: "all", label: "All Orders", color: "bg-gray-100 text-gray-800", activeColor: "bg-gray-500 text-white" },
     { id: "order placed", label: "Order Placed", color: "bg-blue-100 text-blue-800", activeColor: "bg-blue-500 text-white" },
@@ -47,14 +59,35 @@ const AdminOrders = ({ token }) => {
     { id: "canceled", label: "Cancelled", color: "bg-red-100 text-red-800", activeColor: "bg-red-500 text-white" }
   ];
 
+  // Add sync all statuses handler
+  const [syncingStatuses, setSyncingStatuses] = useState(false);
+  const syncAllStatuses = async () => {
+    try {
+      setSyncingStatuses(true);
+      const response = await axios.post(
+        `${backendUrl}/api/tracking/sync-statuses`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        toast.success(`Statuses synced! Updated: ${response.data.updatedCount}`);
+        fetchAllOrders();
+      } else {
+        toast.error(response.data.message || 'Failed to sync statuses');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to sync statuses');
+    } finally {
+      setSyncingStatuses(false);
+    }
+  };
+
   useEffect(() => {
     if (token) {
       fetchAllOrders();
       fetchCarriers();
     }
   }, [token]);
-
-
 
   const fetchAllOrders = async () => {
     try {
@@ -80,22 +113,14 @@ const AdminOrders = ({ token }) => {
 
  const fetchCarriers = async () => {
   try {
-    const response = await axios.get(
-      `${backendUrl}/api/order/carriers`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    console.log('Carriers response:', response.data);
-    if (response.data.success) {
-      setCarriers(response.data.carriers); // ✅ Saves the carriers
-    } else {
-      console.error('Carriers API error:', response.data.message);
-    }
+    setLoadingCarriers(true);
+    // Use manual carriers instead of API
+    setCarriers(MANUAL_CARRIERS);
   } catch (error) {
-    console.error("Failed to fetch carriers:", {
-      message: error.message,
-      response: error.response?.data
-    });
-    toast.error('Failed to fetch carriers');
+    console.error("Failed to set carriers:", error);
+    toast.error('Failed to load carriers');
+  } finally {
+    setLoadingCarriers(false);
   }
 };
 
@@ -111,19 +136,14 @@ const AdminOrders = ({ token }) => {
       if (response.data.success) {
         toast.success("Order status updated successfully.");
         fetchAllOrders();
-      } else {
-        toast.error(response.data.message || "Failed to update status.");
       }
     } catch (error) {
-      console.error("Error updating status:", error.response?.data || error);
       toast.error(error.response?.data?.message || "Error updating status.");
     }
   };
 
-  // Generate QR Code for order
   const generateQrCode = async (order) => {
     try {
-      // Create comprehensive order data for QR code
       const qrData = {
         orderId: order._id,
         orderNumber: order.orderNumber,
@@ -140,7 +160,6 @@ const AdminOrders = ({ token }) => {
         trackingUrl: `${window.location.origin}/track-order/${order._id}`
       };
 
-      // Generate QR code as data URL
       const qrCodeDataUrl = await QRCode.toDataURL(JSON.stringify(qrData), {
         width: 300,
         margin: 2,
@@ -157,13 +176,11 @@ const AdminOrders = ({ token }) => {
 
       return qrCodeDataUrl;
     } catch (error) {
-      console.error('Error generating QR code:', error);
       toast.error('Failed to generate QR code');
       return null;
     }
   };
 
-  // Show QR code in modal
   const showQrCode = async (order) => {
     let qrCodeUrl = qrCodes[order._id];
     
@@ -177,7 +194,6 @@ const AdminOrders = ({ token }) => {
     }
   };
 
-  // Download QR code as image
   const downloadQrCode = (orderId, qrCodeUrl) => {
     const link = document.createElement('a');
     link.download = `qr-code-order-${orderId}.png`;
@@ -188,7 +204,6 @@ const AdminOrders = ({ token }) => {
     toast.success('QR code downloaded successfully!');
   };
 
-  // Print QR code with order details
   const printQrCode = (order, qrCodeUrl) => {
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -236,12 +251,11 @@ const AdminOrders = ({ token }) => {
     printWindow.close();
   };
 
-  // Get tracking information
   const getTrackingInfo = async (orderId) => {
     try {
       setLoadingTracking(true);
       const response = await axios.get(
-        `${backendUrl}/api/order/${orderId}/tracking`,
+        `${backendUrl}/api/tracking/order/${orderId}/status`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -250,18 +264,21 @@ const AdminOrders = ({ token }) => {
         setShowTrackingModal(true);
       }
     } catch (error) {
-      console.error("Error fetching tracking info:", error);
-      toast.error("Failed to get tracking information");
+      toast.error(error.response?.data?.message || "Failed to get tracking information");
     } finally {
       setLoadingTracking(false);
     }
   };
 
-  // Add tracking information
   const addTracking = async () => {
     try {
+      if (!trackingForm.trackingNumber) {
+        toast.error('Please enter a tracking number');
+        return;
+      }
+
       const response = await axios.post(
-        `${backendUrl}/api/order/${selectedOrderForTracking._id}/tracking`,
+        `${backendUrl}/api/tracking/order/${selectedOrderForTracking._id}/tracking`,
         trackingForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -270,14 +287,62 @@ const AdminOrders = ({ token }) => {
         toast.success('Tracking added successfully');
         fetchAllOrders();
         setShowAddTrackingModal(false);
+        setTrackingForm({ trackingNumber: '', carrierCode: 'jtexpress-ph' });
       }
     } catch (error) {
-      toast.error('Failed to add tracking');
-      console.error(error);
+      toast.error(error.response?.data?.message || 'Failed to add tracking');
     }
   };
 
-  // Filter orders based on active tab and search query
+  const detectCarrier = async (trackingNumber) => {
+    if (!trackingNumber) {
+      toast.error('Please enter a tracking number');
+      return;
+    }
+    
+    try {
+      setLoadingCarriers(true);
+      const response = await axios.post(
+        `${backendUrl}/api/tracking/detect-carrier`,
+        { trackingNumber },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success && response.data.carriers.length > 0) {
+        // Auto-select J&T Express if detected
+        const jtExpress = response.data.carriers.find(c => c.carrier_code === 'jtexpress-ph');
+        if (jtExpress) {
+          setTrackingForm(prev => ({
+            ...prev,
+            carrierCode: 'jtexpress-ph'
+          }));
+          toast.success(`Detected carrier: J&T Express`);
+        } else {
+          // Show other options
+          toast.info(
+            <div>
+              <p>Detected carriers:</p>
+              <ul className="mt-2">
+                {response.data.carriers.map(carrier => (
+                  <li key={carrier.carrier_code} className="text-sm">
+                    {carrier.carrier_name} ({carrier.carrier_code})
+                  </li>
+                ))}
+              </ul>
+            </div>,
+            { autoClose: 5000 }
+          );
+        }
+      } else {
+        toast.error('No carriers detected for this tracking number');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to detect carrier');
+    } finally {
+      setLoadingCarriers(false);
+    }
+  };
+
   const getFilteredOrders = () => {
     let filtered = orders;
     
@@ -298,7 +363,6 @@ const AdminOrders = ({ token }) => {
     return filtered;
   };
 
-  // Sort filtered orders
   const sortedOrders = [...getFilteredOrders()].sort((a, b) => {
     if (sortCriteria === "date") return new Date(b.date) - new Date(a.date);
     if (sortCriteria === "amount") return b.amount - a.amount;
@@ -325,7 +389,6 @@ const AdminOrders = ({ token }) => {
       document.body.removeChild(a);
     } catch (error) {
       toast.error("Failed to download receipt.");
-      console.error(error);
     }
   };
 
@@ -340,16 +403,12 @@ const AdminOrders = ({ token }) => {
       if (response.data.success) {
         toast.success("Payment confirmed successfully.");
         fetchAllOrders();
-      } else {
-        toast.error(response.data.message);
       }
     } catch (error) {
-      console.error("Error confirming payment:", error.response?.data || error);
       toast.error("Failed to confirm payment.");
     }
   };
 
-  // Get count for each tab
   const getTabCount = (tabId) => {
     if (tabId === "all") return orders.length;
     return orders.filter(order => order.status.toLowerCase() === tabId.toLowerCase()).length;
@@ -391,6 +450,17 @@ const AdminOrders = ({ token }) => {
     });
   };
 
+  const getTrackingNumberFormat = (carrierCode) => {
+    const formats = {
+      'jtexpress-ph': 'JTV999999999999 (e.g., JTV123456789012)',
+      'lbc': 'LL9999999999 (e.g., AB1234567890)',
+      'phlpost': 'LL999999999LL (e.g., AB123456789XY)',
+      'ninjavan': 'NV999999999999 (e.g., NV123456789012)',
+      '2go': '2GO9999999999 (e.g., 2GO1234567890)'
+    };
+    return formats[carrierCode] || '8-20 alphanumeric characters';
+  };
+
   return (
     <div className="p-4">
       {/* Header */}
@@ -413,6 +483,15 @@ const AdminOrders = ({ token }) => {
               </svg>
             </div>
           </div>
+          {/* Sync All Statuses Button */}
+          <button
+            onClick={syncAllStatuses}
+            disabled={syncingStatuses}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            <FiRefreshCw className={syncingStatuses ? 'animate-spin' : ''} />
+            {syncingStatuses ? 'Syncing...' : 'Sync All Statuses'}
+          </button>
         </div>
       </div>
 
@@ -542,7 +621,7 @@ const AdminOrders = ({ token }) => {
                     {order.payment ? "Paid" : "Pending"}
                   </span>
                 </p>
-                <p><span className="font-medium">Date:</span> {new Date(order.date).toLocaleDateString()}</p>
+                <p><span className="font-medium">Date:</span> {formatDate(order.date)}</p>
               </div>
 
               <p className="text-lg font-bold text-gray-800">
@@ -556,13 +635,14 @@ const AdminOrders = ({ token }) => {
                   value={order.status}
                   className="p-2 font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="order placed">Order Placed</option>
-                  <option value="packing">Packing</option>
-                  <option value="for pickup">Ready for Pickup</option>
-                  <option value="shipped">Shipped</option>
-                  <option value="out for delivery">Out for Delivery</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="canceled">Canceled</option>
+                  <option value="Order Placed">Order Placed</option>
+                  <option value="Packing">Packing</option>
+                  <option value="Ready for Pickup">Ready for Pickup</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Out for Delivery">Out for Delivery</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Problem/Delayed">Problem/Delayed</option>
+                  <option value="Canceled">Canceled</option>
                 </select>
 
                 {/* Tracking Buttons */}
@@ -720,75 +800,110 @@ const AdminOrders = ({ token }) => {
         </div>
       )}
 
-      {/* Tracking Info Modal */}
+      {/* Tracking Modal */}
       {showTrackingModal && trackingInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Order Tracking</h3>
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">Tracking Information</h3>
               <button
-                onClick={() => {
-                  setShowTrackingModal(false);
-                  setTrackingInfo(null);
-                }}
-                className="text-2xl text-gray-400 transition-colors hover:text-gray-600"
+                onClick={() => setShowTrackingModal(false)}
+                className="text-gray-400 hover:text-gray-500"
               >
-                <FiX />
+                <FiX className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Tracking Number</p>
-                  <p className="font-mono">{trackingInfo.trackingNumber}</p>
+            <div className="p-6">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">Tracking Number:</span>
+                  <span className="font-mono">{trackingInfo.tracking_number}</span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Carrier</p>
-                  <p>{trackingInfo.carrierCode}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">Carrier:</span>
+                  <span>{trackingInfo.courier_code}</span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Status</p>
-                  <p className="capitalize">{trackingInfo.status?.replace('_', ' ')}</p>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Status:</span>
+                  <span className={`capitalize font-medium ${
+                    (trackingInfo.status === 'delivered' || trackingInfo.delivery_status === 'delivered') ? 'text-green-600' :
+                    (trackingInfo.status === 'exception' || trackingInfo.delivery_status === 'exception') ? 'text-red-600' :
+                    'text-blue-600'
+                  }`}>
+                    {(trackingInfo.status || trackingInfo.delivery_status)?.replace('_', ' ')}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Last Updated</p>
-                  <p>{trackingInfo.lastUpdated ? formatDate(trackingInfo.lastUpdated) : 'N/A'}</p>
+                {/* Optionally show TrackingMore raw status for debugging */}
+                {trackingInfo && (
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="font-medium">TrackingMore Status:</span>
+                    <span className="text-sm text-gray-500">{trackingInfo.status || trackingInfo.delivery_status}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between mt-2">
+                  <span className="font-medium">Last Updated:</span>
+                  <span className="text-sm text-gray-500">
+                    {new Date(trackingInfo.updated_at).toLocaleString()}
+                  </span>
                 </div>
               </div>
 
-              {trackingInfo.events?.length > 0 ? (
-                <div>
-                  <h4 className="mb-2 font-medium">Tracking History</h4>
-                  <div className="pl-4 space-y-4 border-l-2 border-gray-200">
-                    {trackingInfo.events.map((event, index) => (
-                      <div key={index} className="relative">
-                        <div className="absolute w-3 h-3 bg-blue-500 rounded-full -left-5 top-1.5"></div>
-                        <div className="p-3 rounded-lg bg-gray-50">
-                          <p className="font-medium">{event.description}</p>
-                          <p className="text-sm text-gray-500">{event.location}</p>
-                          <p className="mt-1 text-xs text-gray-400">
-                            {formatDate(event.timestamp)}
-                          </p>
+              {trackingInfo.origin_info?.trackinfo?.length > 0 ? (
+                <div className="space-y-4">
+                  <h4 className="font-medium">Tracking History</h4>
+                  <div className="relative">
+                    <div className="absolute left-4 h-full w-0.5 bg-gray-200 -translate-x-1/2"></div>
+                    <div className="space-y-4">
+                      {trackingInfo.origin_info.trackinfo.map((event, index) => (
+                        <div key={index} className="relative pl-8">
+                          <div className={`absolute left-4 w-3 h-3 rounded-full -translate-x-1/2 ${
+                            index === 0 ? 'bg-green-500' : 'bg-blue-500'
+                          }`}></div>
+                          <div className="p-3 rounded-lg bg-gray-50">
+                            <p className="font-medium">{event.tracking_detail}</p>
+                            {event.location && (
+                              <p className="text-sm text-gray-500">
+                                <FiMapPin className="inline mr-1" />
+                                {event.location}
+                              </p>
+                            )}
+                            <p className="mt-1 text-xs text-gray-400">
+                              {(
+                                event.checkpoint_date && !isNaN(new Date(event.checkpoint_date))
+                              ) ? (
+                                new Date(event.checkpoint_date).toLocaleString()
+                              ) : (
+                                "No date available"
+                              )}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : (
-                <p className="py-4 text-center text-gray-500">No tracking updates available yet</p>
+                <div className="py-4 text-center text-gray-500">
+                  No tracking updates available yet
+                </div>
               )}
 
-              <div className="pt-4">
+              <div className="flex gap-3 mt-6">
                 <a
-                  href={trackingInfo.trackingUrl || `https://trackingmore.com/tracking.php?nums=${trackingInfo.trackingNumber}&courier=${trackingInfo.carrierCode}`}
+                  href={trackingInfo.trackingUrl || `https://trackingmore.com/tracking.php?nums=${trackingInfo.tracking_number}&courier=${trackingInfo.courier_code}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center w-full gap-2 px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+                  className="flex-1 px-4 py-2 text-center text-white bg-blue-600 rounded hover:bg-blue-700"
                 >
-                  <FiExternalLink className="w-4 h-4" />
                   View Full Tracking Details
                 </a>
+                <button
+                  onClick={() => getTrackingInfo(trackingInfo.orderId)}
+                  className="px-4 py-2 text-white bg-gray-600 rounded hover:bg-gray-700"
+                >
+                  Refresh
+                </button>
               </div>
             </div>
           </div>
@@ -797,85 +912,84 @@ const AdminOrders = ({ token }) => {
 
       {/* Add Tracking Modal */}
       {showAddTrackingModal && selectedOrderForTracking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Add Tracking Information</h3>
-              <button
-                onClick={() => {
-                  setShowAddTrackingModal(false);
-                  setSelectedOrderForTracking(null);
-                }}
-                className="text-2xl text-gray-400 transition-colors hover:text-gray-600"
-              >
-                <FiX />
-              </button>
-            </div>
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+    <div className="w-full max-w-md bg-white rounded-lg shadow-xl">
+      <div className="flex items-center justify-between p-4 border-b">
+        <h3 className="text-lg font-semibold">Add Tracking Information</h3>
+        <button
+          onClick={() => {
+            setShowAddTrackingModal(false);
+            setSelectedOrderForTracking(null);
+            setTrackingForm({ trackingNumber: '', carrierCode: 'jtexpress-ph' });
+          }}
+          className="text-gray-400 hover:text-gray-500"
+        >
+          <FiX className="w-6 h-6" />
+        </button>
+      </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Carrier
-                </label>
-                <select
-                  className="w-full p-2 border border-gray-300 rounded"
-                  value={trackingForm.carrierCode}
-                  onChange={(e) => setTrackingForm({
-                    ...trackingForm,
-                    carrierCode: e.target.value
-                  })}
-                >
-                  <option value="">Select Carrier</option>
-                  {carriers.map((carrier) => (
-                    <option key={carrier.code} value={carrier.code}>
-                      {carrier.name} ({carrier.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Tracking Number
-                </label>
-                <input
-                  type="text"
-                  className="w-full p-2 border border-gray-300 rounded"
-                  value={trackingForm.trackingNumber}
-                  onChange={(e) => setTrackingForm({
-                    ...trackingForm,
-                    trackingNumber: e.target.value
-                  })}
-                  placeholder="Enter tracking number"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  onClick={() => {
-                    setShowAddTrackingModal(false);
-                    setSelectedOrderForTracking(null);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 transition-colors border border-gray-300 rounded hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={addTracking}
-                  className="px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded hover:bg-blue-700"
-                  disabled={!trackingForm.carrierCode || !trackingForm.trackingNumber}
-                >
-                  Add Tracking
-                </button>
-              </div>
-            </div>
-          </div>
+      <div className="p-6">
+        <div className="mb-4">
+          <label className="block mb-2 text-sm font-medium text-gray-700">
+            Tracking Number
+          </label>
+          <input
+            type="text"
+            className="w-full p-2 border border-gray-300 rounded"
+            value={trackingForm.trackingNumber}
+            onChange={(e) => setTrackingForm(prev => ({
+              ...prev,
+              trackingNumber: e.target.value
+            }))}
+            placeholder="Enter tracking number"
+          />
         </div>
-      )}
+
+        <div className="mb-4">
+          <label className="block mb-2 text-sm font-medium text-gray-700">
+            Carrier
+          </label>
+          <select
+            className="w-full p-2 border border-gray-300 rounded"
+            value={trackingForm.carrierCode}
+            onChange={(e) => setTrackingForm(prev => ({
+              ...prev,
+              carrierCode: e.target.value
+            }))}
+          >
+            {carriers.map(carrier => (
+              <option key={carrier.carrier_code} value={carrier.carrier_code}>
+                {carrier.carrier_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => {
+              setShowAddTrackingModal(false);
+              setSelectedOrderForTracking(null);
+              setTrackingForm({ trackingNumber: '', carrierCode: 'jtexpress-ph' });
+            }}
+            className="px-4 py-2 text-sm font-medium text-gray-700 transition-colors border border-gray-300 rounded hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={addTracking}
+            className="px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded hover:bg-blue-700"
+            disabled={!trackingForm.carrierCode || !trackingForm.trackingNumber}
+          >
+            Add Tracking
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
 
 export default AdminOrders;
-
-
