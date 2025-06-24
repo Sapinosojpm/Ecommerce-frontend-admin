@@ -126,10 +126,22 @@ const MANUAL_CARRIERS = [
 
 
   const statusHandler = async (event, orderId) => {
+    const newStatus = event.target.value;
+    const order = orders.find(o => o._id === orderId);
+    // Prevent status change to certain statuses if no tracking number
+    const needsTracking = [
+      'Ready for Pickup',
+      'Shipped',
+      'Out for Delivery'
+    ];
+    if (needsTracking.includes(newStatus) && !(order.tracking && order.tracking.trackingNumber)) {
+      toast.error('Cannot proceed: Please add a tracking number before changing status to "' + newStatus + '".');
+      return;
+    }
     try {
       const response = await axios.post(
         `${backendUrl}/api/order/status`,
-        { orderId, status: event.target.value },
+        { orderId, status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -461,6 +473,15 @@ const MANUAL_CARRIERS = [
     return formats[carrierCode] || '8-20 alphanumeric characters';
   };
 
+  // Collapsible state for each order
+  const [expandedOrders, setExpandedOrders] = useState({});
+  const toggleExpand = (orderId) => {
+    setExpandedOrders((prev) => ({
+      ...prev,
+      [orderId]: !prev[orderId],
+    }));
+  };
+
   return (
     <div className="p-4">
       {/* Header */}
@@ -573,26 +594,70 @@ const MANUAL_CARRIERS = [
                   </span>
                 </div>
                 <div className="font-medium">
-                  {order.items.map((item, index) => (
-                    <div key={index} className="py-0.5">
-                      <p className="text-gray-800">
-                        {item.name} x {item.quantity}
-                      </p>
-
-                      {item.variationDetails?.length > 0 && (
-                        <p className="mt-1 text-sm">
-                          Variations:{" "}
-                          <span className="font-medium text-green-600">
-                            {item.variationDetails.map((v, idx) => (
-                              <span key={idx} className="mr-2">
-                                {v.variationName} - {v.optionName}
-                              </span>
-                            ))}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                  <div className="mb-2 text-base font-semibold text-blue-700">Order Items</div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-xs border border-gray-200 rounded-lg bg-blue-50">
+                      <thead className="sticky top-0 z-10 bg-blue-100">
+                        <tr className="text-blue-900">
+                          <th className="px-2 py-1 text-left">Product</th>
+                          <th className="px-2 py-1 text-left">Variation(s)</th>
+                          <th className="px-2 py-1 text-right">Base Price</th>
+                          <th className="px-2 py-1 text-right">Variation Adj.</th>
+                          <th className="px-2 py-1 text-right">Discount</th>
+                          <th className="px-2 py-1 text-right">Final Price</th>
+                          <th className="px-2 py-1 text-right">Qty</th>
+                          <th className="px-2 py-1 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(expandedOrders[order._id] ? order.items : order.items.slice(0, 3)).map((item, index) => {
+                          let variationAdjustment = 0;
+                          if (item.variationDetails && Array.isArray(item.variationDetails)) {
+                            variationAdjustment = item.variationDetails.reduce(
+                              (sum, v) => sum + (v.priceAdjustment || 0),
+                              0
+                            );
+                          }
+                          let basePrice = (item.price || 0) + variationAdjustment;
+                          const discount = item.discount ? (basePrice * (item.discount / 100)) : 0;
+                          const finalPrice = Math.round((basePrice - discount) * 100) / 100;
+                          const itemTotal = Math.round(finalPrice * (item.quantity || 1) * 100) / 100;
+                          return (
+                            <tr key={index} className="border-t border-gray-200">
+                              <td className="px-2 py-1 font-medium text-gray-800">{item.name}</td>
+                              <td className="px-2 py-1 text-green-700">
+                                {item.variationDetails?.length > 0 ? (
+                                  item.variationDetails.map((v, idx) => (
+                                    <div key={idx}>
+                                      <span className="font-semibold">{v.variationName}</span>: {v.optionName}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <span className="italic text-gray-400">None</span>
+                                )}
+                              </td>
+                              <td className="px-2 py-1 text-right">{currency}{(item.price || 0).toLocaleString()}</td>
+                              <td className="px-2 py-1 text-right">{currency}{variationAdjustment.toLocaleString()}</td>
+                              <td className="px-2 py-1 text-right text-red-600">-{currency}{discount.toLocaleString()}</td>
+                              <td className="px-2 py-1 text-right text-blue-900 font-semibold">{currency}{finalPrice.toLocaleString()}</td>
+                              <td className="px-2 py-1 text-right">{item.quantity}</td>
+                              <td className="px-2 py-1 text-right font-bold text-green-700">{currency}{itemTotal.toLocaleString()}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    {order.items.length > 3 && (
+                      <div className="mt-2 text-center">
+                        <button
+                          className="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition"
+                          onClick={() => toggleExpand(order._id)}
+                        >
+                          {expandedOrders[order._id] ? 'Show Less' : `Show All Items (${order.items.length})`}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <hr className="my-3 border-gray-200" />
@@ -711,6 +776,43 @@ const MANUAL_CARRIERS = [
                     </>
                   )}
                 </div>
+
+                {/* Subtotal, Shipping, Total */}
+                {(() => {
+                  const subtotal = Math.round(order.items.reduce((sum, item) => {
+                    let variationAdjustment = 0;
+                    if (item.variationDetails && Array.isArray(item.variationDetails)) {
+                      variationAdjustment = item.variationDetails.reduce(
+                        (s, v) => s + (v.priceAdjustment || 0),
+                        0
+                      );
+                    }
+                    let basePrice = (item.price || 0) + variationAdjustment;
+                    const discount = item.discount ? (basePrice * (item.discount / 100)) : 0;
+                    const finalPrice = Math.round((basePrice - discount) * 100) / 100;
+                    return sum + finalPrice * (item.quantity || 1);
+                  }, 0) * 100) / 100;
+                  const total = Math.round((subtotal + (order.shippingFee || 0)) * 100) / 100;
+                  return (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="mb-2 text-base font-semibold text-blue-700">Order Summary</div>
+                      <div className="flex flex-col gap-1 text-sm text-gray-700">
+                        <div className="flex justify-between">
+                          <span>Subtotal:</span>
+                          <span className="font-semibold">{currency}{subtotal.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Shipping Fee:</span>
+                          <span>{currency}{(order.shippingFee || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-lg font-bold text-blue-900 mt-2 border-t pt-2 border-blue-200">
+                          <span>Total:</span>
+                          <span>{currency}{total.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           ))
