@@ -38,7 +38,7 @@ const Navbar = ({ setToken }) => {
 
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 bg-indigo-600 shadow-md">
+    <div className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 py-3 bg-indigo-600 shadow-md">
      <img
   className="w-auto h-10"
   src={assets.ecommerce}

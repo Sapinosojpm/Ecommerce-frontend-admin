@@ -611,6 +611,18 @@ const MANUAL_CARRIERS = [
                       </thead>
                       <tbody>
                         {(expandedOrders[order._id] ? order.items : order.items.slice(0, 3)).map((item, index) => {
+                          const capital = item.capital || 0;
+                          let markup = 0;
+                          if (item.additionalCapital) {
+                            if (item.additionalCapital.type === 'percent') {
+                              markup = capital * (item.additionalCapital.value / 100);
+                            } else {
+                              markup = item.additionalCapital.value || 0;
+                            }
+                          }
+                          const basePlusMarkup = capital + markup;
+                          const vat = basePlusMarkup * ((item.vat || 0) / 100);
+                          const itemPrice = basePlusMarkup + vat;
                           let variationAdjustment = 0;
                           if (item.variationDetails && Array.isArray(item.variationDetails)) {
                             variationAdjustment = item.variationDetails.reduce(
@@ -618,9 +630,8 @@ const MANUAL_CARRIERS = [
                               0
                             );
                           }
-                          let basePrice = (item.price || 0) + variationAdjustment;
-                          const discount = item.discount ? (basePrice * (item.discount / 100)) : 0;
-                          const finalPrice = Math.round((basePrice - discount) * 100) / 100;
+                          const discount = item.discount ? (itemPrice * (item.discount / 100)) : 0;
+                          const finalPrice = Math.round((itemPrice - discount) * 100) / 100;
                           const itemTotal = Math.round(finalPrice * (item.quantity || 1) * 100) / 100;
                           return (
                             <tr key={index} className="border-t border-gray-200">
@@ -636,7 +647,7 @@ const MANUAL_CARRIERS = [
                                   <span className="italic text-gray-400">None</span>
                                 )}
                               </td>
-                              <td className="px-2 py-1 text-right">{currency}{(item.price || 0).toLocaleString()}</td>
+                              <td className="px-2 py-1 text-right">{currency}{itemPrice.toLocaleString()}</td>
                               <td className="px-2 py-1 text-right">{currency}{variationAdjustment.toLocaleString()}</td>
                               <td className="px-2 py-1 text-right text-red-600">-{currency}{discount.toLocaleString()}</td>
                               <td className="px-2 py-1 text-right text-blue-900 font-semibold">{currency}{finalPrice.toLocaleString()}</td>
@@ -780,6 +791,18 @@ const MANUAL_CARRIERS = [
                 {/* Subtotal, Shipping, Total */}
                 {(() => {
                   const subtotal = Math.round(order.items.reduce((sum, item) => {
+                    const capital = item.capital || 0;
+                    let markup = 0;
+                    if (item.additionalCapital) {
+                      if (item.additionalCapital.type === 'percent') {
+                        markup = capital * (item.additionalCapital.value / 100);
+                      } else {
+                        markup = item.additionalCapital.value || 0;
+                      }
+                    }
+                    const basePlusMarkup = capital + markup;
+                    const vat = basePlusMarkup * ((item.vat || 0) / 100);
+                    const itemPrice = basePlusMarkup + vat;
                     let variationAdjustment = 0;
                     if (item.variationDetails && Array.isArray(item.variationDetails)) {
                       variationAdjustment = item.variationDetails.reduce(
@@ -787,9 +810,8 @@ const MANUAL_CARRIERS = [
                         0
                       );
                     }
-                    let basePrice = (item.price || 0) + variationAdjustment;
-                    const discount = item.discount ? (basePrice * (item.discount / 100)) : 0;
-                    const finalPrice = Math.round((basePrice - discount) * 100) / 100;
+                    const discount = item.discount ? (itemPrice * (item.discount / 100)) : 0;
+                    const finalPrice = Math.round((itemPrice - discount) * 100) / 100 + variationAdjustment;
                     return sum + finalPrice * (item.quantity || 1);
                   }, 0) * 100) / 100;
                   const total = Math.round((subtotal + (order.shippingFee || 0)) * 100) / 100;

@@ -92,7 +92,7 @@ const App = () => {
   };
 
   return (
-    <div className='min-h-screen bg-indigo-100'>
+    <div className='min-h-screen bg-gray-20'>
       <ToastContainer />
       {token === "" ? (
         <motion.div
