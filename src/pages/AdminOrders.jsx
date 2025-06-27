@@ -814,22 +814,29 @@ const MANUAL_CARRIERS = [
                     const finalPrice = Math.round((itemPrice - discount) * 100) / 100 + variationAdjustment;
                     return sum + finalPrice * (item.quantity || 1);
                   }, 0) * 100) / 100;
-                  const total = Math.round((subtotal + (order.shippingFee || 0)) * 100) / 100;
+                  const voucher = order.voucherAmount || 0;
+                  const total = Math.round((subtotal + (order.shippingFee || 0) - voucher) * 100) / 100;
                   return (
                     <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="mb-2 text-base font-semibold text-blue-700">Order Summary</div>
                       <div className="flex flex-col gap-1 text-sm text-gray-700">
                         <div className="flex justify-between">
                           <span>Subtotal:</span>
-                          <span className="font-semibold">{currency}{subtotal.toLocaleString()}</span>
+                          <span>{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
+                        {voucher > 0 && (
+                          <div className="flex justify-between text-green-700">
+                            <span>Voucher:</span>
+                            <span>-{voucher.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between">
                           <span>Shipping Fee:</span>
-                          <span>{currency}{(order.shippingFee || 0).toLocaleString()}</span>
+                          <span>{(order.shippingFee || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
-                        <div className="flex justify-between text-lg font-bold text-blue-900 mt-2 border-t pt-2 border-blue-200">
+                        <div className="flex justify-between font-bold">
                           <span>Total:</span>
-                          <span>{currency}{total.toLocaleString()}</span>
+                          <span>{total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     </div>
