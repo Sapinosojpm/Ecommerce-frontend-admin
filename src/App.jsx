@@ -135,7 +135,7 @@ const App = () => {
             </div>
 
             {/* Main content area */}
-            <div className='w-full md:w-[70%] px-4 md:px-8 mx-auto md:ml-[max(5vw,25px)] my-8 text-gray-600 text-base'>
+            <div className='w-full md:w-[70%] px-4 md:px-8 mx-auto md:ml-[max(5vw,25px)] my-8 text-gray-600 text-base pt-16'>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={location.pathname}

@@ -1521,6 +1521,24 @@ const OrderAnalytics = () => {
               </div>
             </div>
 
+            {/* Canceled Orders Card */}
+            <div className="p-2 rounded-3xl bg-[#e3e6eb] shadow-[6px_6px_16px_rgba(0,0,0,0.1),-6px_-6px_16px_rgba(255,255,255,0.9)] h-full max-w-xs w-full">
+              <div className="bg-[#e3e6eb] h-full rounded-3xl shadow-[inset_6px_6px_12px_rgba(0,0,0,0.08),inset_-6px_-6px_12px_rgba(255,255,255,0.8)] p-5 min-h-[130px] flex flex-col justify-between font-sans gap-4 border border-gray-100 transition-all duration-300 hover:scale-[1.01]">
+                <div className="flex items-center justify-between">
+                  <div className="text-[13px] font-bold text-gray-800 tracking-[0.15em] uppercase">Canceled Orders</div>
+                  <span className="p-2 border border-gray-300 bg-gray-100 rounded-full shadow-md">
+                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </span>
+                </div>
+                <div className="mt-4">
+                  <div className="text-3xl font-extrabold text-gray-900 tracking-tight">{formatNumber(analytics.cancelledOrders)}</div>
+                  <div className="text-[11px] text-gray-500 italic leading-snug">Canceled</div>
+                </div>
+              </div>
+            </div>
+
             {/* Total Capital */}
             <div className="p-2 rounded-3xl bg-[#e3e6eb] shadow-[6px_6px_16px_rgba(0,0,0,0.1),-6px_-6px_16px_rgba(255,255,255,0.9)] h-full max-w-xs w-full">
               <div className="bg-[#e3e6eb] h-full rounded-3xl shadow-[inset_6px_6px_12px_rgba(0,0,0,0.08),inset_-6px_-6px_12px_rgba(255,255,255,0.8)] p-5 min-h-[130px] flex flex-col justify-between font-sans gap-4 border border-gray-100 transition-all duration-300 hover:scale-[1.01]">
