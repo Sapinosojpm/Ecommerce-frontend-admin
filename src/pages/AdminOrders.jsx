@@ -685,7 +685,7 @@ const MANUAL_CARRIERS = [
                 <p className="font-medium text-gray-600">{order.address?.phone}</p>
               </div>
 
-              <div className="space-y-1 text-sm">
+              <div className="space-y-1 text-sm ">
                 <p><span className="font-medium">Items:</span> {order.items.length}</p>
                 <p><span className="font-medium">Method:</span> {order.paymentMethod}</p>
                 <p><span className="font-medium">Payment:</span> 
@@ -700,10 +700,6 @@ const MANUAL_CARRIERS = [
                 <p><span className="font-medium">Date:</span> {formatDate(order.date)}</p>
               </div>
 
-              <p className="text-lg font-bold text-gray-800">
-                {currency}
-                {order.amount.toLocaleString()}
-              </p>
 
               <div className="flex flex-col gap-3">
                 <select
