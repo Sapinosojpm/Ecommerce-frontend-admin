@@ -7,7 +7,7 @@ import Add from './pages/Add';
 import List from './pages/List';
 import Orders from './pages/AdminOrders';
 import Login from './components/Login';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import OrderAnalytics from './pages/OrderAnalytics';
 import Hero from './components/HeroSection';
@@ -87,13 +87,18 @@ const App = () => {
     }
   }, [location.pathname]);
 
+  // Manual toast test for debugging
+  // useEffect(() => {
+  //   toast.info('Manual test toast! If you see this, Toastify is working.', { autoClose: 3000 });
+  // }, []);
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
   return (
     <div className='min-h-screen bg-gray-20'>
-      <ToastContainer />
+      <ToastContainer position="top-right" />
       {token === "" ? (
         <motion.div
           initial={{ opacity: 0 }}

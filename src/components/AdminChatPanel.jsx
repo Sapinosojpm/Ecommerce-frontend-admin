@@ -14,7 +14,7 @@ const AdminChatPanel = () => {
 
   useEffect(() => {
     // Use the special admin token from environment variables
-    const adminToken = process.env.REACT_APP_ADMIN_SECRET_TOKEN;
+    const adminToken = process.env.JWT_SECRET;
     if (!adminToken) {
       console.error('Admin token not configured');
       return;

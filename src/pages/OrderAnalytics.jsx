@@ -989,81 +989,45 @@ const OrderAnalytics = () => {
     doc.save("Order_Analytics_Report.pdf");
   };
 
-  // Export to Excel
+  // Helper: flatten items for export (up to 5 items)
+  const flattenOrderForExport = (order, maxItems = 5) => {
+    const base = {
+      "Order ID": order.id || order._id || "",
+      "Customer Name": order.customerName || "Unknown",
+      "Address": order.address || "Unknown Address",
+      "Payment Method": order.paymentMethod || "Unknown",
+      "Payment Status": order.payment ? "Paid" : "Unpaid",
+      "Date Ordered": order.date ? new Date(order.date).toLocaleDateString() : "Unknown",
+      "Status": order.status || "Unknown",
+      "Amount": order.amount || 0,
+      "Discount": order.discountAmount || 0,
+      "Voucher": order.voucherAmount || 0,
+      "Shipping": order.shippingFee || 0,
+      "Region Fee": order.regionFee || 0,
+    };
+    // Add up to maxItems item columns
+    const items = order.items || [];
+    for (let i = 0; i < maxItems; i++) {
+      const item = items[i] || {};
+      base[`Item ${i + 1} Name`] = item.name || "";
+      base[`Item ${i + 1} Qty`] = item.quantity || "";
+      base[`Item ${i + 1} Price`] = item.price || "";
+      base[`Item ${i + 1} Capital`] = item.capital || "";
+      base[`Item ${i + 1} Additional Capital`] = item.additionalCapital || "";
+      base[`Item ${i + 1} VAT`] = item.vat || "";
+      base[`Item ${i + 1} Discount`] = item.discount || "";
+      base[`Item ${i + 1} Variation Adjustment`] = item.variationAdjustment || "";
+      base[`Item ${i + 1} Weight`] = item.weight || "";
+    }
+    return base;
+  };
+
+  // Export to Excel (user-friendly, multi-column items)
   const exportToExcel = () => {
-    // Create worksheets
     const orderWorksheet = XLSX.utils.json_to_sheet(
-      orders.map((order) => {
-        let subtotal = 0;
-        let vat = 0;
-        if (Array.isArray(order.items)) {
-          order.items.forEach((item) => {
-            let variationAdjustment = item.variationAdjustment || 0;
-            let basePrice = (item.price || 0) + variationAdjustment;
-            const discount = item.discount ? (basePrice * (item.discount / 100)) : 0;
-            const finalPrice = Math.round((basePrice - discount) * 100) / 100;
-            const itemTotal = Math.round((finalPrice * (item.quantity || 1)) * 100) / 100;
-            subtotal = Math.round((subtotal + itemTotal) * 100) / 100;
-            // VAT calculation
-            const itemVATRate = (item.vat || 0) / 100;
-            vat += (item.price || 0) * (item.quantity || 1) * itemVATRate;
-          });
-        }
-        const discount = order.discountAmount || 0;
-        const voucher = order.voucherAmount || 0;
-        const shipping = order.shippingFee || 0;
-        const total = Math.round((subtotal - discount - voucher + shipping) * 100) / 100;
-        const orderCapital =
-          order.items?.reduce?.(
-            (sum, item) => sum + (item.capital || 0) * (item.quantity || 0),
-            0
-          ) || 0;
-        const orderAdditionalCapital =
-          order.items?.reduce?.(
-            (sum, item) =>
-              sum + (item.additionalCapital || 0) * (item.quantity || 0),
-            0
-          ) || 0;
-        const orderCombinedCapital = orderCapital + orderAdditionalCapital;
-        const orderProfit = total - orderCombinedCapital - shipping;
-        const orderVAT = vat;
-
-        return {
-          "Order ID": order.id || order._id || "",
-          "Customer Name": order.customerName || "Unknown",
-          "Product Name":
-            order.items?.map?.((item) => item.name).join(", ") || "",
-          Quantity:
-            order.items?.reduce?.(
-              (sum, item) => sum + (item.quantity || 0),
-              0
-            ) || 0,
-          Subtotal: subtotal,
-          Discount: discount,
-          Voucher: voucher,
-          Shipping: shipping,
-          Total: total,
-          "Base Capital": orderCapital,
-          "Additional Capital": orderAdditionalCapital,
-          "Total Capital": orderCombinedCapital,
-          Profit: orderProfit,
-          "Profit Margin":
-            total > 0
-              ? `${((orderProfit / total) * 100).toFixed(2)}%`
-              : "0%",
-          "VAT Amount": orderVAT,
-          "VAT Percentage":
-            total > 0
-              ? `${((orderVAT / total) * 100).toFixed(2)}%`
-              : "0%",
-          Status: order.status || "Unknown",
-          "Date Ordered": order.date
-            ? new Date(order.date).toLocaleDateString()
-            : "Unknown",
-        };
-      })
+      orders.map((order) => flattenOrderForExport(order, 5))
     );
-
+    // ... analytics and low stock as before ...
     const analyticsWorksheet = XLSX.utils.json_to_sheet([
       {
         "Total Sales": analytics.totalSales,
@@ -1073,9 +1037,7 @@ const OrderAnalytics = () => {
         "Total Profit": analytics.totalProfit,
         "Profit Margin":
           analytics.totalSales > 0
-            ? `${((analytics.totalProfit / analytics.totalSales) * 100).toFixed(
-                2
-              )}%`
+            ? `${((analytics.totalProfit / analytics.totalSales) * 100).toFixed(2)}%`
             : "0%",
         "Total VAT": analytics.totalVAT,
         "VAT Percentage": analytics.vatPercentage.toFixed(2) + "%",
@@ -1085,7 +1047,6 @@ const OrderAnalytics = () => {
         "New Customers": analytics.customerMetrics.newCustomers,
       },
     ]);
-
     const lowStockWorksheet = XLSX.utils.json_to_sheet(
       analytics.lowStockProducts.map((product) => {
         const totalQuantity =
@@ -1106,7 +1067,6 @@ const OrderAnalytics = () => {
         };
       })
     );
-
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, orderWorksheet, "Orders");
     XLSX.utils.book_append_sheet(workbook, analyticsWorksheet, "Analytics");
@@ -1114,11 +1074,25 @@ const OrderAnalytics = () => {
     XLSX.writeFile(workbook, "Order_Analytics.xlsx");
   };
 
-  // Import Excel function
+  // Export to CSV (same as Excel)
+  const exportToCSV = () => {
+    const csvData = orders.map((order) => flattenOrderForExport(order, 5));
+    const csvContent = [
+      Object.keys(csvData[0]).join(","),
+      ...csvData.map((row) => Object.values(row).join(",")),
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Order_Analytics.csv";
+    link.click();
+  };
+
+  // Import Excel function (reconstruct items from columns)
   const importFromExcel = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     setCsvUploading(true);
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1127,33 +1101,42 @@ const OrderAnalytics = () => {
         const workbook = XLSX.read(data, { type: "array" });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
         // Convert Excel data to match order schema
-        const importedOrders = jsonData.map((row) => ({
-          userId: row["User ID"] || "default-user-id",
-          customerName: row["Customer Name"] || "Unknown",
-          items: row["Product Name"]
-            ? row["Product Name"].split(", ").map((name) => ({
-                name,
-                quantity: row["Quantity"] || 1,
-                price: row["Price"] || 0,
-                capital: row["Capital"] || 0,
-                additionalCapital: row["Additional Capital"] || 0,
-                vat: row["VAT Percentage"] || 0,
-              }))
-            : [],
-          amount: Number(row["Price"] || 0),
-          status: row["Status"] || "Order Placed",
-          date: row["Date Ordered"]
-            ? new Date(row["Date Ordered"]).getTime()
-            : Date.now(),
-          address: row["Address"] || "Unknown Address",
-          paymentMethod: row["Payment Method"] || "Unknown",
-          payment: row["Payment Status"]
-            ? row["Payment Status"] === "Paid"
-            : false,
-        }));
-
+        const importedOrders = jsonData.map((row) => {
+          // Reconstruct items array from columns
+          const items = [];
+          for (let i = 1; i <= 5; i++) {
+            const name = row[`Item ${i} Name`];
+            if (name && name.trim() !== "") {
+              items.push({
+                name: name,
+                quantity: Number(row[`Item ${i} Qty`] || 0),
+                price: Number(row[`Item ${i} Price`] || 0),
+                capital: Number(row[`Item ${i} Capital`] || 0),
+                additionalCapital: row[`Item ${i} Additional Capital`] || 0,
+                vat: Number(row[`Item ${i} VAT`] || 0),
+                discount: Number(row[`Item ${i} Discount`] || 0),
+                variationAdjustment: Number(row[`Item ${i} Variation Adjustment`] || 0),
+                weight: Number(row[`Item ${i} Weight`] || 0),
+              });
+            }
+          }
+          return {
+            userId: row["User ID"] || row["Customer Name"] || "default-user-id",
+            customerName: row["Customer Name"] || "Unknown",
+            address: row["Address"] || "Unknown Address",
+            paymentMethod: row["Payment Method"] || "Unknown",
+            payment: row["Payment Status"] ? row["Payment Status"] === "Paid" : false,
+            date: row["Date Ordered"] ? new Date(row["Date Ordered"]).getTime() : Date.now(),
+            status: row["Status"] || "Order Placed",
+            items,
+            amount: Number(row["Amount"] || 0),
+            discountAmount: Number(row["Discount"] || 0),
+            voucherAmount: Number(row["Voucher"] || 0),
+            shippingFee: Number(row["Shipping"] || 0),
+            regionFee: Number(row["Region Fee"] || 0),
+          };
+        });
         saveImportedOrders(importedOrders);
       } catch (error) {
         console.error("Error processing Excel file:", error);
@@ -1192,72 +1175,6 @@ const OrderAnalytics = () => {
     } finally {
       setCsvUploading(false);
     }
-  };
-
-  // Export to CSV
-  const exportToCSV = () => {
-    const csvData = orders.map((order) => {
-      const orderCapital =
-        order.items?.reduce?.(
-          (sum, item) => sum + (item.capital || 0) * (item.quantity || 0),
-          0
-        ) || 0;
-      const orderAdditionalCapital =
-        order.items?.reduce?.(
-          (sum, item) =>
-            sum + (item.additionalCapital || 0) * (item.quantity || 0),
-          0
-        ) || 0;
-      const orderCombinedCapital = orderCapital + orderAdditionalCapital;
-      const orderProfit = (order.amount || 0) - orderCombinedCapital;
-      const orderVAT =
-        order.items?.reduce?.((sum, item) => {
-          const itemPrice = item.price || 0;
-          const itemVATRate = (item.vat || 0) / 100;
-          const quantity = item.quantity || 0;
-          return sum + itemPrice * quantity * itemVATRate;
-        }, 0) || 0;
-
-      return {
-        "Order ID": order.id || "",
-        "Customer Name": order.customerName || "Unknown",
-        "Product Name":
-          order.items?.map?.((item) => item.name).join(", ") || "",
-        Quantity:
-          order.items?.reduce?.((sum, item) => sum + (item.quantity || 0), 0) ||
-          0,
-        Price: order.amount || 0,
-        "Base Capital": orderCapital,
-        "Additional Capital": orderAdditionalCapital,
-        "Total Capital": orderCombinedCapital,
-        Profit: orderProfit,
-        "Profit Margin":
-          order.amount > 0
-            ? `${((orderProfit / order.amount) * 100).toFixed(2)}%`
-            : "0%",
-        "VAT Amount": orderVAT,
-        "VAT Percentage":
-          order.amount > 0
-            ? `${((orderVAT / order.amount) * 100).toFixed(2)}%`
-            : "0%",
-        Status: order.status || "Unknown",
-        "Date Ordered": order.date
-          ? new Date(order.date).toLocaleDateString()
-          : "Unknown",
-      };
-    });
-
-    const csvContent = [
-      Object.keys(csvData[0]).join(","),
-      ...csvData.map((row) => Object.values(row).join(",")),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "Order_Analytics.csv";
-    link.click();
   };
 
   // Add at the top of the component (after useState declarations)

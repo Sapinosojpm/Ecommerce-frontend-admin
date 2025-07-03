@@ -40,7 +40,7 @@ const HeroSection = () => {
   setError(null);
 
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authtoken');
     if (!token) {
       throw new Error('Authentication required');
     }
