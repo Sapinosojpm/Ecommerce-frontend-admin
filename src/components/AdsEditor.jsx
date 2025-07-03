@@ -11,6 +11,7 @@ const AdsEditor = () => {
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(null);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchAds();
@@ -46,6 +47,7 @@ const AdsEditor = () => {
   };
 
   const uploadImageToServer = async () => {
+    setUploading(true);
     const formData = new FormData();
     formData.append("image", image);
 
@@ -53,8 +55,10 @@ const AdsEditor = () => {
       const { data } = await axios.post(`${backendUrl}/api/upload-image`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      setUploading(false);
       return data.imageUrl; // Expecting `{ imageUrl: "uploaded_url" }`
     } catch (error) {
+      setUploading(false);
       setError("Image upload failed.");
       return null;
     }
@@ -165,10 +169,10 @@ const AdsEditor = () => {
       {/* Add Ad Button */}
       <button
         onClick={handleAddAd}
-        disabled={loading}
+        disabled={loading || uploading}
         className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
       >
-        {loading ? "Adding..." : "Add Ad"}
+        {uploading ? "Uploading..." : loading ? "Adding..." : "Add Ad"}
       </button>
 
       {/* Ads Table */}
