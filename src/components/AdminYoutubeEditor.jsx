@@ -7,6 +7,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [isYoutubeActive, setIsYoutubeActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // Fetch current video URL when component mounts
   useEffect(() => {
@@ -47,6 +48,7 @@ const AdminPanel = () => {
       return;
     }
 
+    setUploading(true);
     const formData = new FormData();
     formData.append("video", videoFile);
 
@@ -61,6 +63,8 @@ const AdminPanel = () => {
     } catch (error) {
       console.error("Error uploading video:", error);
       setMessage("Failed to upload video");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -123,8 +127,9 @@ const AdminPanel = () => {
           <button
             type="submit"
             className="w-full px-4 py-2 mt-4 font-bold text-white transition duration-500 bg-black rounded hover:bg-indigo-700 focus:outline-none focus:shadow-outline"
+            disabled={uploading}
           >
-            Upload Video
+            {uploading ? "Uploading..." : "Upload Video"}
           </button>
         </form>
 
