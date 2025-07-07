@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
     base: '/',
   plugins: [react()],
-  server: { port: 5174, proxy: { '/api': 'http://localhost:4000' } },
+  server: { port: 5174, proxy: { '/api': 'https://ecommerce-server-d8a1.onrender.com' } },
   resolve: {
     alias: {
       // Add an alias to resolve "@deck.gl/widgets" if necessary
