@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const FACEBOOK_AUTH_URL = '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = '/api/facebook/pages';
 const FACEBOOK_POST_URL = '/api/facebook/post';
+const PRODUCT_LIST_URL = '/api/product/list';
 
 const FacebookManager = () => {
   const [pages, setPages] = useState([]);
@@ -12,6 +13,40 @@ const FacebookManager = () => {
   const [selectedPage, setSelectedPage] = useState('');
   const [postMessage, setPostMessage] = useState('');
   const [postResult, setPostResult] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState('');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(PRODUCT_LIST_URL);
+      const data = await res.json();
+      if (data.success) {
+        setProducts(data.products || []);
+      } else {
+        setProducts([]);
+      }
+    } catch (err) {
+      setProducts([]);
+    }
+  };
+
+  const handleProductChange = (e) => {
+    const productId = e.target.value;
+    setSelectedProduct(productId);
+    if (!productId) {
+      setPostMessage('');
+      return;
+    }
+    const product = products.find(p => p._id === productId);
+    if (product) {
+      const msg = `New Product: ${product.name}\nPrice: $${product.finalPrice ?? product.price}\n${product.description ?? ''}`;
+      setPostMessage(msg);
+    }
+  };
 
   const connectFacebook = () => {
     // Open Facebook OAuth in a new window
@@ -62,17 +97,30 @@ const FacebookManager = () => {
       setError('Please select a page and enter a message.');
       return;
     }
+    let product = null;
+    if (selectedProduct) {
+      product = products.find(p => p._id === selectedProduct);
+      if (product) {
+        product = {
+          name: product.name,
+          price: product.finalPrice ?? product.price,
+          description: product.description,
+          imageUrl: Array.isArray(product.image) ? product.image[0] : product.image
+        };
+      }
+    }
     try {
       const res = await fetch(FACEBOOK_POST_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ pageId: selectedPage, message: postMessage })
+        body: JSON.stringify({ pageId: selectedPage, message: postMessage, product })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message || 'Failed to post');
       setPostResult('Successfully posted! Post ID: ' + data.id);
       setPostMessage('');
+      setSelectedProduct('');
     } catch (err) {
       setError(err.message);
     }
@@ -85,7 +133,7 @@ const FacebookManager = () => {
         <b>Instructions:</b> Connect your Facebook account to manage and post to your Facebook Pages directly from this dashboard.<br/>
         <ul className="list-disc pl-5 mt-2">
           <li>Click <b>Connect Facebook Page</b> and complete the login.</li>
-          <li>After connecting, select a page and write your message to post.</li>
+          <li>After connecting, select a page and product, then write or edit your message to post.</li>
           <li>If you don't see your pages, click <b>Refresh Pages</b>.</li>
         </ul>
       </div>
@@ -143,6 +191,20 @@ const FacebookManager = () => {
                 <option key={page.id} value={page.id}>{page.name}</option>
               ))}
             </select>
+
+            <label className="block mb-2 font-medium">Select Product (optional):</label>
+            <select
+              className="w-full mb-2 p-2 border rounded"
+              value={selectedProduct}
+              onChange={handleProductChange}
+              disabled={products.length === 0}
+            >
+              <option value="">-- Select a Product --</option>
+              {products.map(product => (
+                <option key={product._id} value={product._id}>{product.name}</option>
+              ))}
+            </select>
+
             <label className="block mb-2 font-medium">Message:</label>
             <textarea
               className="w-full mb-2 p-2 border rounded"
