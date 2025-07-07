@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Use environment variable or fallback to relative path
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
+const BACKEND_URL = process.env.REACT_APP_API_URL || '';
 
 const FACEBOOK_AUTH_URL = BACKEND_URL + '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = BACKEND_URL + '/api/facebook/pages';
