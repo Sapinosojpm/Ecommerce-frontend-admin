@@ -74,7 +74,7 @@ const PERMISSION_MAP = {
 const STYLES = {
   active: "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg",
   inactive: "text-indigo-100 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-indigo-500 hover:text-white hover:shadow-lg transition-all duration-200",
-  sidebar: "w-64 min-h-full text-sm font-medium bg-indigo-800 shadow-xl",
+  sidebar: "w-64 h-screen text-sm font-medium bg-indigo-800 shadow-xl",
   header: "px-6 py-8 border-b border-indigo-700",
   menuSection: "px-4 py-4",
   menuTitle: "mb-3 text-xs font-semibold tracking-wider text-indigo-300 uppercase",
@@ -293,6 +293,23 @@ const Sidebar = () => {
             </div>
           </div>
         ))}
+        {/* Facebook Manager Section */}
+        <div className={STYLES.menuSection}>
+          <div className={STYLES.menuTitle}>Social</div>
+          <div className="space-y-1">
+            <NavLink
+              to="/facebook-manager"
+              className={({ isActive }) =>
+                `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
+              }
+            >
+              <span className="text-base">
+                {/* You can use a Facebook icon here if you want */}
+                Facebook Manager
+              </span>
+            </NavLink>
+          </div>
+        </div>
       </div>
 
       <div className={STYLES.footer}>

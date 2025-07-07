@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AboutSection from "./AboutSection";
 import AdminLocationEditor from "./AdminLocationEditor";
+import FacebookPageEmbed from "./FacebookPageEmbed";
 
 const componentEditors = {
   "About Us": AboutSection,
   "Location": AdminLocationEditor,
+  "Facebook Page": FacebookPageEmbed,
 };
 
 const AboutPageEditor = () => {

@@ -48,6 +48,7 @@ import PopupManager from './components/PopupManager';
 // import AdminLiveChat from './components/AdminLiveChat';
 import BotHelloLottie from './components/BotHelloLottie';
 import { Bot } from 'lucide-react';
+import FacebookManager from './pages/FacebookManager';
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = '₱';
 
@@ -191,6 +192,7 @@ const App = () => {
                     <Route path='/navlinks' element={<NavigationManager token={token} />} />
                     <Route path='/live-selling' element={<LiveSelling token={token} />} />
                     <Route path='/live-chat' element={<AdminChatPanel token={token} />} />
+                    <Route path='/facebook-manager' element={<FacebookManager />} />
                   </Routes>
                 </motion.div>
               </AnimatePresence>
