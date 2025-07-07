@@ -1103,7 +1103,7 @@ const List = ({ token }) => {
                           key={index}
                           src={img}
                           alt={`Product ${index + 1}`}
-                          className="w-10 h-10 object-cover rounded"
+                          className="object-cover w-10 h-10 rounded"
                         />
                       ))}
                       {product.image?.length > 3 && (

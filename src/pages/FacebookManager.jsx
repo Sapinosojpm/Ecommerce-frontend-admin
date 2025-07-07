@@ -81,14 +81,26 @@ const FacebookManager = () => {
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow">
       <h2 className="text-2xl font-bold mb-4">Facebook Page Manager</h2>
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-blue-800 text-sm">
+        <b>Instructions:</b> Connect your Facebook account to manage and post to your Facebook Pages directly from this dashboard.<br/>
+        <ul className="list-disc pl-5 mt-2">
+          <li>Click <b>Connect Facebook Page</b> and complete the login.</li>
+          <li>After connecting, select a page and write your message to post.</li>
+          <li>If you don't see your pages, click <b>Refresh Pages</b>.</li>
+        </ul>
+      </div>
       {!connected ? (
         <>
           <button
             onClick={connectFacebook}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
           >
             Connect Facebook Page
           </button>
+          <div className="mt-4 text-gray-600 text-sm">
+            <b>Why can't I post?</b><br/>
+            You need to connect your Facebook account first. Make sure pop-ups are allowed in your browser.
+          </div>
           {error && <div className="text-red-500 mt-2">{error}</div>}
         </>
       ) : (
@@ -103,7 +115,10 @@ const FacebookManager = () => {
           {loading ? (
             <div>Loading...</div>
           ) : pages.length === 0 ? (
-            <div>No pages found.</div>
+            <div className="mb-4 text-yellow-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
+              <b>No pages found.</b> Make sure your Facebook account has at least one page you manage.<br/>
+              <span className="text-xs">Try reconnecting or check your Facebook permissions.</span>
+            </div>
           ) : (
             <ul className="list-disc pl-6 mb-4">
               {pages.map((page) => (
@@ -115,12 +130,13 @@ const FacebookManager = () => {
           )}
 
           {/* Post to Page Form */}
-          <form onSubmit={handlePost} className="mb-4 p-4 bg-gray-50 rounded">
+          <form onSubmit={handlePost} className="mb-4 p-4 bg-gray-50 rounded border border-gray-200">
             <label className="block mb-2 font-medium">Select Page:</label>
             <select
               className="w-full mb-2 p-2 border rounded"
               value={selectedPage}
               onChange={e => setSelectedPage(e.target.value)}
+              disabled={pages.length === 0}
             >
               <option value="">-- Select a Page --</option>
               {pages.map(page => (
@@ -134,10 +150,12 @@ const FacebookManager = () => {
               value={postMessage}
               onChange={e => setPostMessage(e.target.value)}
               placeholder="Write your post here..."
+              disabled={pages.length === 0}
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className={`px-4 py-2 w-full rounded mt-2 ${pages.length === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+              disabled={pages.length === 0}
             >
               Post to Facebook Page
             </button>
@@ -146,6 +164,13 @@ const FacebookManager = () => {
           {error && <div className="text-red-500 mt-2">{error}</div>}
         </>
       )}
+      <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">
+        <b>Need help?</b> <br/>
+        - Make sure you are an admin of the Facebook Page.<br/>
+        - If you see errors, try reconnecting your Facebook account.<br/>
+        - If the post fails, check your Facebook Page permissions and try again.<br/>
+        - For further issues, contact your system administrator.
+      </div>
     </div>
   );
 };
