@@ -25,19 +25,17 @@ const FacebookManager = () => {
     // Check for token in URL after Facebook login
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('token');
-    
     if (urlToken) {
       setToken(urlToken);
       localStorage.setItem(TOKEN_KEY, urlToken);
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
+      fetchPages(urlToken); // Always fetch with the new token
+    } else if (token) {
+      fetchPages(token);
     }
-    
     fetchProducts();
-    
-    if (token || urlToken) {
-      fetchPages();
-    }
+    // eslint-disable-next-line
   }, [token]);
 
   const fetchProducts = async () => {
@@ -90,26 +88,21 @@ const FacebookManager = () => {
     }, 1000);
   };
 
-  const fetchPages = async () => {
-    if (!token) return;
-    
+  const fetchPages = async (authToken) => {
+    if (!authToken) return;
     setLoading(true);
     setError('');
-    
     try {
       const response = await fetch(FACEBOOK_PAGES_URL, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         }
       });
-      
       const data = await response.json();
-      
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch pages');
       }
-      
       setPages(data.data || []);
       setConnected(true);
     } catch (err) {
