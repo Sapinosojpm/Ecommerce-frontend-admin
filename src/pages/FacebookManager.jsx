@@ -22,16 +22,16 @@ const FacebookManager = () => {
   const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY) || '');
 
   useEffect(() => {
-    // Debug: log the URL and token extraction
     console.log("FacebookManager mounted", window.location.search);
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('token');
+    console.log("Token from URL:", urlToken);
     if (urlToken) {
       setToken(urlToken);
       localStorage.setItem(TOKEN_KEY, urlToken);
-      // Clean URL
+      console.log("Token saved to localStorage:", urlToken);
       window.history.replaceState({}, document.title, window.location.pathname);
-      fetchPages(urlToken); // Always fetch with the new token
+      fetchPages(urlToken);
     } else if (token) {
       fetchPages(token);
     }
