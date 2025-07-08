@@ -8,7 +8,7 @@ const FACEBOOK_PAGES_URL = BACKEND_URL + '/api/facebook/pages';
 const FACEBOOK_POST_URL = BACKEND_URL + '/api/facebook/post';
 const PRODUCT_LIST_URL = BACKEND_URL + '/api/product/list';
 
-const TOKEN_KEY = 'fb_manager_token';
+const TOKEN_KEY = 'authToken';
 
 const FacebookManager = () => {
   const [pages, setPages] = useState([]);
