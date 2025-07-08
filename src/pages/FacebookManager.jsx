@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-// Use environment variable or fallback to relative path
-const BACKEND_URL = process.env.REACT_APP_API_URL || '';
+// Use environment variable or fallback to development backend URL
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const FACEBOOK_AUTH_URL = BACKEND_URL + '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = BACKEND_URL + '/api/facebook/pages';
@@ -52,6 +52,9 @@ const FacebookManager = () => {
   };
 
   const connectFacebook = () => {
+    setLoading(true);
+    setError('');
+    
     // Open Facebook OAuth in a new window
     const width = 600;
     const height = 700;
@@ -63,11 +66,20 @@ const FacebookManager = () => {
       `width=${width},height=${height},left=${left},top=${top}`
     );
 
-    // Poll to check if the window is closed, then try to fetch pages
-    const timer = setInterval(() => {
+    // Poll to check if the window is closed
+    const timer = setInterval(async () => {
       if (authWindow.closed) {
         clearInterval(timer);
-        fetchPages();
+        try {
+          // Try to fetch pages to verify successful authentication
+          await fetchPages();
+          setConnected(true);
+        } catch (err) {
+          setError('Facebook authentication failed. Please try again.');
+          setConnected(false);
+        } finally {
+          setLoading(false);
+        }
       }
     }, 1000);
   };
@@ -76,17 +88,24 @@ const FacebookManager = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(FACEBOOK_PAGES_URL, {
-        credentials: 'include',
+      const response = await fetch(FACEBOOK_PAGES_URL, {
+        credentials: 'include',  // Important: include credentials for session cookie
+        headers: {
+          'Accept': 'application/json',
+        }
       });
-      if (!res.ok) throw new Error('Not authenticated or error fetching pages');
-      const data = await res.json();
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       setPages(data.data || []);
       setConnected(true);
     } catch (err) {
-      setError(err.message);
+      console.error('Error fetching Facebook pages:', err);
+      setError('Failed to fetch Facebook pages. Please try reconnecting to Facebook.');
       setConnected(false);
-      setPages([]);
     } finally {
       setLoading(false);
     }
