@@ -8,6 +8,8 @@ const FACEBOOK_PAGES_URL = BACKEND_URL + '/api/facebook/pages';
 const FACEBOOK_POST_URL = BACKEND_URL + '/api/facebook/post';
 const PRODUCT_LIST_URL = BACKEND_URL + '/api/product/list';
 
+const TOKEN_KEY = localStorage.getItem('authToken');
+
 const FacebookManager = () => {
   const [pages, setPages] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -18,14 +20,28 @@ const FacebookManager = () => {
   const [postResult, setPostResult] = useState(null);
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
+  const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY) || '');
 
   useEffect(() => {
+    // Check for token in URL after Facebook login
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    if (urlToken) {
+      setToken(urlToken);
+      localStorage.setItem(TOKEN_KEY, urlToken);
+      // Remove token from URL for cleanliness
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
     fetchProducts();
+    if (token || urlToken) {
+      fetchPages(urlToken || token);
+    }
+    // eslint-disable-next-line
   }, []);
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch(PRODUCT_LIST_URL, { credentials: 'include' });
+      const res = await fetch(PRODUCT_LIST_URL);
       const data = await res.json();
       if (data.success) {
         setProducts(data.products || []);
@@ -84,26 +100,25 @@ const FacebookManager = () => {
     }, 1000);
   };
 
-  const fetchPages = async () => {
+  const fetchPages = async (overrideToken) => {
     setLoading(true);
     setError('');
     try {
+      const authToken = overrideToken || token || localStorage.getItem(TOKEN_KEY);
+      if (!authToken) throw new Error('Not authenticated. Please connect Facebook.');
       const response = await fetch(FACEBOOK_PAGES_URL, {
-        credentials: 'include',  // Important: include credentials for session cookie
         headers: {
           'Accept': 'application/json',
+          'Authorization': `Bearer ${authToken}`
         }
       });
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       const data = await response.json();
       setPages(data.data || []);
       setConnected(true);
     } catch (err) {
-      console.error('Error fetching Facebook pages:', err);
       setError('Failed to fetch Facebook pages. Please try reconnecting to Facebook.');
       setConnected(false);
     } finally {
@@ -132,10 +147,14 @@ const FacebookManager = () => {
       }
     }
     try {
+      const authToken = token || localStorage.getItem(TOKEN_KEY);
+      if (!authToken) throw new Error('Not authenticated. Please connect Facebook.');
       const res = await fetch(FACEBOOK_POST_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
         body: JSON.stringify({ pageId: selectedPage, message: postMessage, product })
       });
       const data = await res.json();
