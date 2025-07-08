@@ -22,7 +22,8 @@ const FacebookManager = () => {
   const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY) || '');
 
   useEffect(() => {
-    // Check for token in URL after Facebook login
+    // Debug: log the URL and token extraction
+    console.log("FacebookManager mounted", window.location.search);
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('token');
     if (urlToken) {
