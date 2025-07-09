@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import { backendUrl } from "../App";
+import { FaFacebook, FaSyncAlt, FaSignOutAlt, FaBoxOpen, FaPaperPlane } from "react-icons/fa";
 const FACEBOOK_AUTH_URL = '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = '/api/facebook/pages';
 const FACEBOOK_POST_URL = '/api/facebook/post';
@@ -161,21 +162,23 @@ const FacebookManager = () => {
 
   return (
     <div className="max-w-2xl mx-auto bg-gray-100 min-h-screen">
-      {/* Facebook-like header */}
-      <div className="bg-blue-600 text-white p-4 shadow-md">
+      {/* Sticky Facebook-like header */}
+      <div className="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Facebook Page Manager</h1>
+          <div className="flex items-center space-x-2">
+            <FaFacebook className="text-3xl" />
+            <h1 className="text-2xl font-bold">Facebook Page Manager</h1>
+          </div>
           {token && (
             <button 
               onClick={handleLogout}
-              className="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg"
+              className="flex items-center bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg"
             >
-              Logout
+              <FaSignOutAlt className="mr-2" /> Logout
             </button>
           )}
         </div>
       </div>
-
       <div className="p-4">
         {!token ? (
           <div className="bg-white rounded-lg shadow p-6 text-center">
@@ -185,7 +188,7 @@ const FacebookManager = () => {
               onClick={connectFacebook}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Connect with Facebook
+              <FaFacebook className="inline mr-2 text-lg" /> Connect with Facebook
             </button>
           </div>
         ) : (
@@ -193,12 +196,15 @@ const FacebookManager = () => {
             {/* Page selection card */}
             <div className="bg-white rounded-lg shadow p-4">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Your Pages</h2>
+                <h2 className="text-xl font-semibold flex items-center">
+                  <FaFacebook className="mr-2 text-blue-600" /> Your Pages
+                </h2>
                 <button
                   onClick={() => fetchPages(token)}
                   disabled={loading}
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                  className="flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
                 >
+                  <FaSyncAlt className="mr-1" />
                   {loading ? 'Refreshing...' : 'Refresh'}
                 </button>
               </div>
@@ -218,8 +224,8 @@ const FacebookManager = () => {
                       onClick={() => setSelectedPage(page.id)}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          {page.name.charAt(0)}
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <FaFacebook className="text-blue-600 text-2xl" />
                         </div>
                         <div>
                           <h3 className="font-medium">{page.name}</h3>
@@ -232,10 +238,11 @@ const FacebookManager = () => {
               )}
             </div>
 
-            {/* Post composer - Facebook style */}
+            {/* Post composer */}
             {pages.length > 0 && (
               <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="p-4 border-b">
+                <div className="p-4 border-b flex items-center">
+                  <FaBoxOpen className="text-xl mr-2 text-gray-500" />
                   <h2 className="font-semibold">Create Post</h2>
                 </div>
                 
@@ -268,7 +275,7 @@ const FacebookManager = () => {
                   {previewProduct && (
                     <div className="mb-4 border rounded-lg overflow-hidden">
                       <div className="flex">
-                        <div className="w-1/3 bg-gray-100">
+                        <div className="w-1/3 bg-gray-100 flex items-center justify-center">
                           <img 
                             src={previewProduct.imageUrl} 
                             alt={previewProduct.name}
@@ -286,7 +293,9 @@ const FacebookManager = () => {
 
                   {/* Product selector */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Attach Product</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                      <FaBoxOpen className="mr-2 text-gray-500" /> Attach Product
+                    </label>
                     <select
                       value={selectedProduct}
                       onChange={handleProductSelect}
@@ -308,8 +317,9 @@ const FacebookManager = () => {
                     <button
                       type="submit"
                       disabled={!selectedPage || !postMessage}
-                      className={`px-4 py-2 rounded-lg font-medium ${(!selectedPage || !postMessage) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                      className={`flex items-center px-4 py-2 rounded-lg font-medium ${(!selectedPage || !postMessage) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
                     >
+                      <FaPaperPlane className="mr-2" />
                       Post
                     </button>
                   </div>
