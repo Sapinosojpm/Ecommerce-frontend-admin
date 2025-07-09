@@ -69,7 +69,7 @@ const FacebookManager = () => {
     }, 1000);
   };
 
-  const fetchPages = async (authToken) => {
+  const fetchPages = async (authToken = token) => {
     if (!authToken) return;
     setLoading(true);
     setError('');
@@ -166,8 +166,9 @@ const FacebookManager = () => {
       ) : (
         <>
           <button
-            onClick={fetchPages}
-            className="px-3 py-1 bg-gray-200 rounded mb-4"
+            onClick={() => fetchPages(token)}
+            disabled={loading}
+            className="px-3 py-1 mb-2 text-sm bg-gray-200 rounded hover:bg-gray-300 disabled:bg-gray-100"
           >
             Refresh Pages
           </button>
