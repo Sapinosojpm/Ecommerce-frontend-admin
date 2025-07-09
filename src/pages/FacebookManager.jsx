@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { backendUrl} from "../App";
+import axios from "axios";
+import { backendUrl } from "../App";
 const FACEBOOK_AUTH_URL = '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = '/api/facebook/pages';
 const FACEBOOK_POST_URL = '/api/facebook/post';
@@ -21,10 +22,7 @@ const FacebookManager = () => {
 
   const fetchProducts = async () => {
     try {
-      console.log('Fetching products from:', `${backendUrl}/api/product/list`);
-      const res = await fetch(`${backendUrl}/api/product/list`);
-      const data = await res.json();
-      console.log('Product API response:', data);
+      const { data } = await axios.get(`${backendUrl}/api/product/list`);
       setProducts(data.products || []);
     } catch (err) {
       console.error('Failed to fetch products:', err);
