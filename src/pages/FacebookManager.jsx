@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const FACEBOOK_AUTH_URL = '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = '/api/facebook/pages';
@@ -12,6 +12,26 @@ const FacebookManager = () => {
   const [selectedPage, setSelectedPage] = useState('');
   const [postMessage, setPostMessage] = useState('');
   const [postResult, setPostResult] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState('');
+  // Use React state for token, do not use localStorage
+  const [token, setToken] = useState('');
+
+  useEffect(() => {
+    console.log("FacebookManager mounted", window.location.search);
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    console.log("Token from URL:", urlToken);
+    if (urlToken) {
+      setToken(urlToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      fetchPages(urlToken);
+    } else if (token) {
+      fetchPages(token);
+    }
+    fetchProducts();
+    // eslint-disable-next-line
+  }, [token]);
 
   const connectFacebook = () => {
     // Open Facebook OAuth in a new window
@@ -34,21 +54,27 @@ const FacebookManager = () => {
     }, 1000);
   };
 
-  const fetchPages = async () => {
+  const fetchPages = async (authToken) => {
+    if (!authToken) return;
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(FACEBOOK_PAGES_URL, {
-        credentials: 'include',
+      const response = await fetch(FACEBOOK_PAGES_URL, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
       });
-      if (!res.ok) throw new Error('Not authenticated or error fetching pages');
-      const data = await res.json();
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch pages');
+      }
       setPages(data.data || []);
       setConnected(true);
     } catch (err) {
-      setError(err.message);
+      console.error('Failed to fetch pages:', err);
+      setError(err.message || 'Failed to fetch Facebook pages. Please reconnect.');
       setConnected(false);
-      setPages([]);
     } finally {
       setLoading(false);
     }
@@ -62,34 +88,58 @@ const FacebookManager = () => {
       setError('Please select a page and enter a message.');
       return;
     }
+    let product = null;
+    if (selectedProduct) {
+      const selected = products.find(p => p._id === selectedProduct);
+      if (selected) {
+        product = {
+          name: selected.name,
+          price: selected.finalPrice ?? selected.price,
+          description: selected.description,
+          imageUrl: Array.isArray(selected.image) ? selected.image[0] : selected.image
+        };
+      }
+    }
     try {
-      const res = await fetch(FACEBOOK_POST_URL, {
+      const response = await fetch(FACEBOOK_POST_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ pageId: selectedPage, message: postMessage })
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          pageId: selectedPage, 
+          message: postMessage, 
+          product 
+        })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || 'Failed to post');
-      setPostResult('Successfully posted! Post ID: ' + data.id);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to post');
+      }
+      setPostResult(`Successfully posted! Post ID: ${data.id}`);
       setPostMessage('');
+      setSelectedProduct('');
     } catch (err) {
-      setError(err.message);
+      console.error('Post failed:', err);
+      setError(err.message || 'Failed to post to Facebook');
     }
   };
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow">
       <h2 className="text-2xl font-bold mb-4">Facebook Page Manager</h2>
-      {!connected ? (
+      {/* If token is missing, prompt user to connect Facebook again */}
+      {!token ? (
         <>
           <button
             onClick={connectFacebook}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            disabled={loading}
+            className="w-full px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-blue-300"
           >
-            Connect Facebook Page
+            {loading ? 'Connecting...' : 'Connect Facebook Page'}
           </button>
-          {error && <div className="text-red-500 mt-2">{error}</div>}
+          {error && <div className="mt-2 text-red-500">{error}</div>}
         </>
       ) : (
         <>
