@@ -98,50 +98,28 @@ const App = () => {
   };
 
   return (
-    <div className='min-h-screen bg-gray-20'>
-      <ToastContainer position="top-right" />
-      {token === "" ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Login setToken={setToken} />
-        </motion.div>
-      ) : (
-        <>
-          <AutoLogout setToken={setToken} />
-          <Navbar setToken={setToken} toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
-          <hr />
-          <div className='relative flex w-full'>
-            {/* Sidebar with overlay for mobile */}
-            <div className={`${sidebarOpen ? 'block' : 'hidden'} md:block`}>
-              <div 
-                className="fixed inset-0 z-20 bg-black bg-opacity-50 md:hidden"
-                onClick={toggleSidebar}
-              ></div>
-              <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-                fixed md:static top-0 left-0 h-full z-30 transition-transform duration-300 ease-in-out 
-                bg-white shadow-lg md:shadow-none md:translate-x-0`}
-              >
-                <Sidebar />
-              </div>
-            </div>
-
-            {/* Hamburger menu for mobile - This should be in Navbar component ideally */}
-            <div className="fixed z-50 md:hidden bottom-4 right-4">
-              <button 
-                onClick={toggleSidebar}
-                className="p-3 text-white transition-colors bg-indigo-600 rounded-full shadow-lg hover:bg-indigo-700"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Main content area */}
-            <div className='w-full md:w-[70%] px-4 md:px-8 mx-auto md:ml-[max(5vw,25px)] my-8 text-gray-600 text-base pt-16'>
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside className="w-64 h-screen fixed top-0 left-0 bg-indigo-800 text-white z-20 flex flex-col">
+        <Sidebar />
+      </aside>
+      {/* Main Content */}
+      <main className="flex-1 ml-64 bg-gray-20">
+        <ToastContainer position="top-right" />
+        {token === "" ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Login setToken={setToken} />
+          </motion.div>
+        ) : (
+          <>
+            <AutoLogout setToken={setToken} />
+            <Navbar setToken={setToken} toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
+            <hr />
+            <div className="w-full md:w-[70%] px-4 md:px-8 mx-auto md:ml-[max(5vw,25px)] my-8 text-gray-600 text-base pt-16">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={location.pathname}
@@ -197,9 +175,9 @@ const App = () => {
                 </motion.div>
               </AnimatePresence>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </main>
     </div>
   );
 };
