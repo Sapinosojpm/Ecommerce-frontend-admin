@@ -5,7 +5,7 @@ import {
   FaPlus, FaList, FaBox, FaUsers, FaTachometerAlt,
   FaStore, FaPercentage, FaShoppingCart, FaClipboard, FaMapMarkerAlt,
   FaEdit, FaHome, FaQuestionCircle, FaPhoneAlt, FaComments,
-  FaLock, FaUserCog, FaExclamationTriangle
+  FaLock, FaUserCog, FaExclamationTriangle, FaFacebook
 } from 'react-icons/fa';
 
 // Constants
@@ -261,7 +261,7 @@ const Sidebar = () => {
 
   // Main sidebar render
   return (
-    <div className={STYLES.sidebar}>
+    <div className={`${STYLES.sidebar} flex flex-col h-screen`}>
       <div className={STYLES.header}>
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
         <p className="mt-1 text-xs text-indigo-300">
@@ -269,7 +269,7 @@ const Sidebar = () => {
         </p>
       </div>
 
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 180px)' }}>
         {filteredSections.map((section, sectionIndex) => (
           <div key={sectionIndex} className={STYLES.menuSection}>
             <p className={STYLES.menuTitle}>
@@ -303,8 +303,8 @@ const Sidebar = () => {
                 `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
               }
             >
-              <span className="text-base">
-                {/* You can use a Facebook icon here if you want */}
+              <span className="text-base flex items-center">
+                <FaFacebook className="mr-2 text-blue-400" />
                 Facebook Manager
               </span>
             </NavLink>
@@ -312,7 +312,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      <div className={STYLES.footer}>
+      <div className={`${STYLES.footer} mt-auto`}>
         <div className="text-xs text-center text-indigo-300">
           <p>Logged in as: <span className="font-semibold">{userId?.substring(0, 6)}...</span></p>
           <p className="mt-1">Role: <span className="font-semibold capitalize">{userRole}</span></p>
