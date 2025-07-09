@@ -23,6 +23,7 @@ const FacebookManager = () => {
   const fetchProducts = async () => {
     try {
       const { data } = await axios.get(`${backendUrl}/api/product/list`);
+      console.log('Fetched products:', data.products);
       setProducts(data.products || []);
     } catch (err) {
       console.error('Failed to fetch products:', err);
@@ -206,6 +207,19 @@ const FacebookManager = () => {
               onChange={e => setPostMessage(e.target.value)}
               placeholder="Write your post here..."
             />
+            <label className="block mb-2 font-medium">Select Product:</label>
+            <select
+              value={selectedProduct}
+              onChange={e => setSelectedProduct(e.target.value)}
+              className="w-full p-2 border rounded mb-2"
+            >
+              <option value="">-- Select a Product --</option>
+              {products.map(product => (
+                <option key={product._id} value={product._id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
