@@ -22,8 +22,10 @@ const FacebookManager = () => {
 
   const fetchProducts = async () => {
     try {
+      console.log('Fetching products from:', `${backendUrl}/api/product/list`);
       const res = await fetch(`${backendUrl}/api/product/list`);
       const data = await res.json();
+      console.log('Product API response:', data);
       setProducts(data.products || []);
     } catch (err) {
       console.error('Failed to fetch products:', err);
