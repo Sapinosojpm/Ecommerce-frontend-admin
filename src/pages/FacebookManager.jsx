@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 const FACEBOOK_AUTH_URL = '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = '/api/facebook/pages';
 const FACEBOOK_POST_URL = '/api/facebook/post';
-const PRODUCT_LIST_URL = '/api/products/list';
+const PRODUCT_LIST_URL = '/api/product/list';
 
 const FacebookManager = () => {
   const [pages, setPages] = useState([]);
