@@ -5,6 +5,8 @@ const FACEBOOK_PAGES_URL = '/api/facebook/pages';
 const FACEBOOK_POST_URL = '/api/facebook/post';
 const PRODUCT_LIST_URL = '/api/product/list';
 
+const TOKEN_KEY = 'fbAuthToken';
+
 const FacebookManager = () => {
   const [pages, setPages] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -16,7 +18,7 @@ const FacebookManager = () => {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   // Use React state for token, do not use localStorage
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY) || '');
 
   const fetchProducts = async () => {
     try {
@@ -36,6 +38,7 @@ const FacebookManager = () => {
     console.log("Token from URL:", urlToken);
     if (urlToken) {
       setToken(urlToken);
+      localStorage.setItem(TOKEN_KEY, urlToken);
       window.history.replaceState({}, document.title, window.location.pathname);
       fetchPages(urlToken);
     } else if (token) {
@@ -138,6 +141,13 @@ const FacebookManager = () => {
     }
   };
 
+  // Add a logout handler to clear token from localStorage and state
+  const handleLogout = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    setToken('');
+    // Optionally, redirect or reload the page
+  };
+
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow">
       <h2 className="text-2xl font-bold mb-4">Facebook Page Manager</h2>
@@ -206,6 +216,7 @@ const FacebookManager = () => {
           </form>
           {postResult && <div className="text-green-600 mb-2">{postResult}</div>}
           {error && <div className="text-red-500 mt-2">{error}</div>}
+          <button onClick={handleLogout} className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Logout</button>
         </>
       )}
     </div>
