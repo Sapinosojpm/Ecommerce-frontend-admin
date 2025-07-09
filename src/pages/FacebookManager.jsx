@@ -4,7 +4,7 @@ const FACEBOOK_AUTH_URL = '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = '/api/facebook/pages';
 const FACEBOOK_POST_URL = '/api/facebook/post';
 const PRODUCT_LIST_URL = '/api/product/list';
-
+const backendUrl = import.meta.env.REACT_APP_API_URL
 const TOKEN_KEY = 'fbAuthToken';
 
 const FacebookManager = () => {
@@ -22,7 +22,7 @@ const FacebookManager = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch(PRODUCT_LIST_URL);
+      const res = await fetch(`${backendUrl}/api/product/list`);
       const data = await res.json();
       setProducts(data.products || []);
     } catch (err) {
