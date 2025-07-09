@@ -6,7 +6,7 @@ const FACEBOOK_PAGES_URL = `${BACKEND_URL}/api/facebook/pages`;
 const FACEBOOK_POST_URL = `${BACKEND_URL}/api/facebook/post`;
 const PRODUCT_LIST_URL = `${BACKEND_URL}/api/product/list`;
 
-
+console.log("Backend Url",BACKEND_URL)
 const TOKEN_KEY = 'fbAuthToken';
 
 const FacebookManager = () => {
