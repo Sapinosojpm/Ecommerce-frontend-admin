@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+const BACKEND_URL = import.meta.env.REACT_APP_API_URL || 'http://localhost:4000';
 const FACEBOOK_AUTH_URL = `${BACKEND_URL}/api/auth/facebook`;
 const FACEBOOK_PAGES_URL = `${BACKEND_URL}/api/facebook/pages`;
 const FACEBOOK_POST_URL = `${BACKEND_URL}/api/facebook/post`;
