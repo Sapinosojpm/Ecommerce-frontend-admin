@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Facebook, RefreshCw, Send, User, Package, AlertCircle, CheckCircle, LogOut, Globe, Eye } from 'lucide-react';
-
-// Note: Using your original API integration - no localStorage in this environment
+import axios from "axios";
+import { backendUrl } from "../App";
 const FACEBOOK_AUTH_URL = '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = '/api/facebook/pages';
 const FACEBOOK_POST_URL = '/api/facebook/post';
@@ -18,14 +17,12 @@ const FacebookManager = () => {
   const [postResult, setPostResult] = useState(null);
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
-  const [token, setToken] = useState('');
-  const [isPosting, setIsPosting] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY) || '');
+  const [previewProduct, setPreviewProduct] = useState(null);
 
   const fetchProducts = async () => {
     try {
       const { data } = await axios.get(`${backendUrl}/api/product/list`);
-      console.log('Fetched products:', data.products);
       setProducts(data.products || []);
     } catch (err) {
       console.error('Failed to fetch products:', err);
@@ -34,13 +31,11 @@ const FacebookManager = () => {
   };
 
   useEffect(() => {
-    console.log("FacebookManager mounted", window.location.search);
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('token');
-    console.log("Token from URL:", urlToken);
     if (urlToken) {
       setToken(urlToken);
-      // Note: localStorage not available in this environment
+      localStorage.setItem(TOKEN_KEY, urlToken);
       window.history.replaceState({}, document.title, window.location.pathname);
       fetchPages(urlToken);
     } else if (token) {
@@ -94,17 +89,14 @@ const FacebookManager = () => {
     }
   };
 
-  const handlePost = async () => {
+  const handlePost = async (e) => {
+    e.preventDefault();
     setPostResult(null);
     setError('');
-    setIsPosting(true);
-    
     if (!selectedPage || !postMessage) {
       setError('Please select a page and enter a message.');
-      setIsPosting(false);
       return;
     }
-    
     let product = null;
     if (selectedProduct) {
       const selected = products.find(p => p._id === selectedProduct);
@@ -117,7 +109,6 @@ const FacebookManager = () => {
         };
       }
     }
-    
     try {
       const response = await fetch(FACEBOOK_POST_URL, {
         method: 'POST',
@@ -138,126 +129,101 @@ const FacebookManager = () => {
       setPostResult(`Successfully posted! Post ID: ${data.id}`);
       setPostMessage('');
       setSelectedProduct('');
+      setPreviewProduct(null);
     } catch (err) {
       console.error('Post failed:', err);
       setError(err.message || 'Failed to post to Facebook');
-    } finally {
-      setIsPosting(false);
     }
   };
 
   const handleLogout = () => {
-    // Note: localStorage not available in this environment
+    localStorage.removeItem(TOKEN_KEY);
     setToken('');
-    setConnected(false);
     setPages([]);
-    setSelectedPage('');
-    setPostMessage('');
-    setSelectedProduct('');
-    setPostResult(null);
-    setError('');
+    setConnected(false);
   };
 
-  const selectedProductData = products.find(p => p._id === selectedProduct);
-  const selectedPageData = pages.find(p => p.id === selectedPage);
+  const handleProductSelect = (e) => {
+    const productId = e.target.value;
+    setSelectedProduct(productId);
+    if (productId) {
+      const selected = products.find(p => p._id === productId);
+      setPreviewProduct({
+        name: selected.name,
+        price: selected.finalPrice ?? selected.price,
+        description: selected.description,
+        imageUrl: Array.isArray(selected.image) ? selected.image[0] : selected.image
+      });
+    } else {
+      setPreviewProduct(null);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <Facebook className="w-8 h-8 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">Facebook Manager</h1>
-                <p className="text-gray-600">Manage your Facebook pages and posts</p>
-              </div>
-            </div>
-            {connected && (
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              </button>
-            )}
-          </div>
+    <div className="max-w-2xl mx-auto bg-gray-100 min-h-screen">
+      {/* Facebook-like header */}
+      <div className="bg-blue-600 text-white p-4 shadow-md">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Facebook Page Manager</h1>
+          {token && (
+            <button 
+              onClick={handleLogout}
+              className="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg"
+            >
+              Logout
+            </button>
+          )}
         </div>
+      </div>
 
-        {/* Connection Status */}
+      <div className="p-4">
         {!token ? (
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-              <Facebook className="w-10 h-10 text-blue-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Connect Your Facebook Account</h2>
-            <p className="text-gray-600 mb-6">Link your Facebook account to start managing your pages and creating posts</p>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <h2 className="text-xl font-semibold mb-4">Connect Your Facebook Account</h2>
+            <p className="mb-6 text-gray-600">To manage your Facebook pages, please connect your account.</p>
             <button
               onClick={connectFacebook}
-              disabled={loading}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 transition-colors font-semibold"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              {loading ? 'Connecting...' : 'Connect Facebook'}
+              Connect with Facebook
             </button>
-            {error && (
-              <div className="mt-4 p-4 bg-red-100 border border-red-300 rounded-lg flex items-center space-x-2 text-red-700">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
-              </div>
-            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Pages Section */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
-                  <Globe className="w-6 h-6 text-blue-600" />
-                  <h2 className="text-xl font-bold text-gray-800">Your Pages</h2>
-                </div>
+          <div className="space-y-6">
+            {/* Page selection card */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Your Pages</h2>
                 <button
                   onClick={() => fetchPages(token)}
                   disabled={loading}
-                  className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
                 >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
+                  {loading ? 'Refreshing...' : 'Refresh'}
                 </button>
               </div>
               
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-                  <span className="ml-2 text-gray-600">Loading pages...</span>
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 </div>
               ) : pages.length === 0 ? (
-                <div className="text-center py-8">
-                  <Globe className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No pages found</p>
-                </div>
+                <div className="text-center py-4 text-gray-500">No pages found.</div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {pages.map((page) => (
-                    <div
-                      key={page.id}
-                      className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                        selectedPage === page.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                    <div 
+                      key={page.id} 
+                      className={`border rounded-lg p-3 cursor-pointer transition-colors ${selectedPage === page.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'}`}
                       onClick={() => setSelectedPage(page.id)}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-blue-100 rounded-full">
-                          <User className="w-5 h-5 text-blue-600" />
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          {page.name.charAt(0)}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-800">{page.name}</h3>
-                          <p className="text-sm text-gray-600">ID: {page.id}</p>
+                          <h3 className="font-medium">{page.name}</h3>
+                          <p className="text-sm text-gray-500">ID: {page.id}</p>
                         </div>
                       </div>
                     </div>
@@ -266,120 +232,101 @@ const FacebookManager = () => {
               )}
             </div>
 
-            {/* Post Creation Section */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <Send className="w-6 h-6 text-green-600" />
-                <h2 className="text-xl font-bold text-gray-800">Create Post</h2>
-              </div>
-
-              <div className="space-y-4">
-                {/* Page Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Page
-                  </label>
-                  <select
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    value={selectedPage}
-                    onChange={e => setSelectedPage(e.target.value)}
-                  >
-                    <option value="">Choose a page...</option>
-                    {pages.map(page => (
-                      <option key={page.id} value={page.id}>{page.name}</option>
-                    ))}
-                  </select>
+            {/* Post composer - Facebook style */}
+            {pages.length > 0 && (
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="p-4 border-b">
+                  <h2 className="font-semibold">Create Post</h2>
                 </div>
-
-                {/* Message Input */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Post Message
-                  </label>
-                  <textarea
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                    rows={4}
-                    value={postMessage}
-                    onChange={e => setPostMessage(e.target.value)}
-                    placeholder="What's on your mind?"
-                  />
-                </div>
-
-                {/* Product Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Attach Product (Optional)
-                  </label>
-                  <select
-                    value={selectedProduct}
-                    onChange={e => setSelectedProduct(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  >
-                    <option value="">No product selected</option>
-                    {products.map(product => (
-                      <option key={product._id} value={product._id}>
-                        {product.name} - ${product.finalPrice ?? product.price}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Selected Product Preview */}
-                {selectedProductData && (
-                  <div className="p-4 bg-gray-50 rounded-lg border">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <Package className="w-5 h-5 text-green-600" />
-                      <span className="font-medium text-gray-800">Product Preview</span>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <Package className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-800">{selectedProductData.name}</h4>
-                        <p className="text-green-600 font-bold">${selectedProductData.finalPrice ?? selectedProductData.price}</p>
-                        <p className="text-sm text-gray-600 mt-1">{selectedProductData.description}</p>
-                      </div>
+                
+                <form onSubmit={handlePost} className="p-4">
+                  <div className="flex items-start space-x-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <select
+                        className="w-full p-2 border rounded mb-3 text-sm"
+                        value={selectedPage}
+                        onChange={e => setSelectedPage(e.target.value)}
+                      >
+                        <option value="">Select a Page to Post</option>
+                        {pages.map(page => (
+                          <option key={page.id} value={page.id}>{page.name}</option>
+                        ))}
+                      </select>
+                      
+                      <textarea
+                        className="w-full p-3 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        rows={4}
+                        value={postMessage}
+                        onChange={e => setPostMessage(e.target.value)}
+                        placeholder="What's on your mind?"
+                      />
                     </div>
                   </div>
-                )}
 
-                {/* Post Button */}
-                <button
-                  type="button"
-                  onClick={handlePost}
-                  disabled={!selectedPage || !postMessage || isPosting}
-                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center space-x-2"
-                >
-                  {isPosting ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      <span>Posting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      <span>Post to Facebook</span>
-                    </>
+                  {/* Product preview */}
+                  {previewProduct && (
+                    <div className="mb-4 border rounded-lg overflow-hidden">
+                      <div className="flex">
+                        <div className="w-1/3 bg-gray-100">
+                          <img 
+                            src={previewProduct.imageUrl} 
+                            alt={previewProduct.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="w-2/3 p-3">
+                          <h3 className="font-medium">{previewProduct.name}</h3>
+                          <p className="text-blue-600 font-semibold mt-1">₱{previewProduct.price.toFixed(2)}</p>
+                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{previewProduct.description}</p>
+                        </div>
+                      </div>
+                    </div>
                   )}
-                </button>
-              </div>
 
-              {/* Results */}
-              {postResult && (
-                <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-lg flex items-center space-x-2 text-green-700">
-                  <CheckCircle className="w-5 h-5" />
-                  <span>{postResult}</span>
-                </div>
-              )}
-              
-              {error && (
-                <div className="mt-4 p-4 bg-red-100 border border-red-300 rounded-lg flex items-center space-x-2 text-red-700">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>{error}</span>
-                </div>
-              )}
-            </div>
+                  {/* Product selector */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Attach Product</label>
+                    <select
+                      value={selectedProduct}
+                      onChange={handleProductSelect}
+                      className="w-full p-2 border rounded text-sm"
+                    >
+                      <option value="">Select a Product to Share</option>
+                      {products.map(product => (
+                        <option key={product._id} value={product._id}>
+                          {product.name} (₱{product.finalPrice ?? product.price})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-3 border-t">
+                    <div className="text-sm text-gray-500">
+                      {selectedPage && `Posting to: ${pages.find(p => p.id === selectedPage)?.name}`}
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={!selectedPage || !postMessage}
+                      className={`px-4 py-2 rounded-lg font-medium ${(!selectedPage || !postMessage) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                    >
+                      Post
+                    </button>
+                  </div>
+                </form>
+
+                {postResult && (
+                  <div className="bg-green-50 text-green-700 p-4 border-t">
+                    {postResult}
+                  </div>
+                )}
+                {error && (
+                  <div className="bg-red-50 text-red-700 p-4 border-t">
+                    {error}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
