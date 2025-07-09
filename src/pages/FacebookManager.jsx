@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import { backendUrl } from "../App";
 import { FaFacebook, FaSyncAlt, FaSignOutAlt, FaBoxOpen, FaPaperPlane } from "react-icons/fa";
-const FACEBOOK_AUTH_URL = `${backendUrl}/api/auth/facebook?scope=public_profile,email,pages_show_list,pages_read_engagement,pages_manage_engagement,pages_manage_metadata,pages_manage_posts,pages_read_user_content,read_insights,business_management`;
+const FACEBOOK_AUTH_URL = '/api/auth/facebook?scope=public_profile,email,pages_show_list,pages_read_engagement,pages_manage_engagement,pages_manage_metadata,pages_manage_posts,pages_read_user_content,read_insights,business_management';
 const FACEBOOK_PAGES_URL = '/api/facebook/pages';
 const FACEBOOK_POST_URL = '/api/facebook/post';
 const PRODUCT_LIST_URL = '/api/product/list';
