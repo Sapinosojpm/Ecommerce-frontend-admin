@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 const FACEBOOK_AUTH_URL = '/api/auth/facebook';
 const FACEBOOK_PAGES_URL = '/api/facebook/pages';
 const FACEBOOK_POST_URL = '/api/facebook/post';
+const PRODUCT_LIST_URL = '/api/products/list';
 
 const FacebookManager = () => {
   const [pages, setPages] = useState([]);
@@ -16,6 +17,17 @@ const FacebookManager = () => {
   const [selectedProduct, setSelectedProduct] = useState('');
   // Use React state for token, do not use localStorage
   const [token, setToken] = useState('');
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(PRODUCT_LIST_URL);
+      const data = await res.json();
+      setProducts(data.products || []);
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+      setProducts([]);
+    }
+  };
 
   useEffect(() => {
     console.log("FacebookManager mounted", window.location.search);
