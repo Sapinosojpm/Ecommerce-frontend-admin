@@ -19,17 +19,30 @@ const LogoEditor = () => {
       setMessage("Please select a logo file to upload.");
       return;
     }
-
-    const formData = new FormData();
-    formData.append("logo", file);
-
     try {
+      // 1. Get pre-signed URL from backend
+      const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileType: file.type }),
+      });
+      if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+      const { uploadUrl, fileUrl } = await presignRes.json();
+      // 2. Upload logo to S3
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!s3Res.ok) throw new Error('Failed to upload logo to S3');
+      // 3. Send S3 URL to backend
       const res = await fetch(`${backendUrl}/api/logo/upload`, {
-        method: "POST",
-        body: formData,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: fileUrl }),
       });
       const data = await res.json();
-      setLogo(`${backendUrl}${data.imageUrl}`);
+      setLogo(fileUrl);
       setMessage(data.message);
     } catch (error) {
       console.error("Error uploading logo:", error);

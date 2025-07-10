@@ -78,33 +78,65 @@ const AddIntro = () => {
     handleImageChange(file);
   };
 
+  const uploadImageToS3 = async (file) => {
+    if (!file) return null;
+    try {
+      const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ fileType: file.type }),
+      });
+      if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+      const { uploadUrl, fileUrl } = await presignRes.json();
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type
+        },
+        body: file,
+      });
+      if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+      return fileUrl;
+    } catch (err) {
+      toast.error('Image upload to S3 failed.');
+      return null;
+    }
+  };
+
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     if (!token) {
       toast.error("Unauthorized: Please log in.");
       setIsSubmitting(false);
       return;
     }
-
+    let imageUrl = "";
+    if (image) {
+      imageUrl = await uploadImageToS3(image);
+      if (!imageUrl) {
+        setIsSubmitting(false);
+        return;
+      }
+    }
     try {
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("description", description);
-      if (image) formData.append("image", image);
-
       const response = await axios.post(
         `${backendUrl}/api/intro/addIntro`,
-        formData,
+        {
+          name,
+          description,
+          image: imageUrl,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
+            'Content-Type': 'application/json',
           },
         }
       );
-
       if (response.data.success) {
         toast.success("Intro added successfully!");
         setName("");

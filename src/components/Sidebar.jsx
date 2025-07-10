@@ -5,7 +5,7 @@ import {
   FaPlus, FaList, FaBox, FaUsers, FaTachometerAlt,
   FaStore, FaPercentage, FaShoppingCart, FaClipboard, FaMapMarkerAlt,
   FaEdit, FaHome, FaQuestionCircle, FaPhoneAlt, FaComments,
-  FaLock, FaUserCog, FaExclamationTriangle, FaFacebook
+  FaLock, FaUserCog, FaExclamationTriangle, FaFacebook, FaBars
 } from 'react-icons/fa';
 
 // Constants
@@ -97,6 +97,8 @@ const Sidebar = () => {
   const [userId, setUserId] = useState(null);
   const [error, setError] = useState(null);
   const [userDetails, setUserDetails] = useState({});
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [token, setToken] = useState(localStorage.getItem(AUTH_TOKEN_KEY));
   
   const userDataFetched = useRef(false);
 
@@ -159,6 +161,20 @@ const Sidebar = () => {
     }
   }, [navigate]);
 
+  // Listen for token changes (e.g., after login)
+  useEffect(() => {
+    const onStorage = () => {
+      setToken(localStorage.getItem(AUTH_TOKEN_KEY));
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+  // Re-fetch user details when token changes
+  useEffect(() => {
+    userDataFetched.current = false;
+    fetchUserDetails();
+  }, [token]);
+
   // Initial fetch of user details
   useEffect(() => {
     if (!userDataFetched.current) {
@@ -172,6 +188,11 @@ const Sidebar = () => {
       navigate('/orderAnalytics');
     }
   }, [location.pathname, navigate, userRole]);
+
+  // Add effect to close sidebar on route change (mobile UX)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   /**
    * Checks if user has permission for specific routes
@@ -261,69 +282,84 @@ const Sidebar = () => {
 
   // Main sidebar render
   return (
-    <div className={`${STYLES.sidebar} flex flex-col h-screen`}>
-      <div className={STYLES.header}>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="mt-1 text-xs text-indigo-300">
-          {userRole === 'admin' ? 'Admin Panel' : 'User Panel'}
-        </p>
-      </div>
+    <>
+      <button
+        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-indigo-700 text-white md:hidden"
+        onClick={() => setSidebarOpen((open) => !open)}
+        aria-label="Open sidebar"
+      >
+        <FaBars size={24} />
+      </button>
+      <aside
+        className={`fixed top-0 left-0 z-40 h-full transition-transform duration-300 md:translate-x-0 md:static md:block
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${STYLES.sidebar}
+        `}
+        style={{ minWidth: '16rem', maxWidth: '16rem' }}
+      >
+        <div className={STYLES.header}>
+          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <p className="mt-1 text-xs text-indigo-300">
+            {userRole === 'admin' ? 'Admin Panel' : 'User Panel'}
+          </p>
+        </div>
 
-      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 180px)' }}>
-        {filteredSections.map((section, sectionIndex) => (
-          <div key={sectionIndex} className={STYLES.menuSection}>
-            <p className={STYLES.menuTitle}>
-              {section.title}
-            </p>
+        <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+          {filteredSections.map((section, sectionIndex) => (
+            <div key={sectionIndex} className={STYLES.menuSection}>
+              <p className={STYLES.menuTitle}>
+                {section.title}
+              </p>
+              <div className="space-y-1">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
+                    }
+                  >
+                    <span className="text-base">
+                      {item.icon}
+                    </span>
+                    <span>{item.text}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          ))}
+          {/* Facebook Manager Section */}
+          <div className={STYLES.menuSection}>
+            <div className={STYLES.menuTitle}>Social</div>
             <div className="space-y-1">
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
-                  }
-                >
-                  <span className="text-base">
-                    {item.icon}
-                  </span>
-                  <span>{item.text}</span>
-                </NavLink>
-              ))}
+              <NavLink
+                to="/facebook-manager"
+                className={({ isActive }) =>
+                  `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
+                }
+              >
+                <span className="text-base flex items-center">
+                  <FaFacebook className="mr-2 text-blue-400" />
+                  Facebook Manager
+                </span>
+              </NavLink>
             </div>
           </div>
-        ))}
-        {/* Facebook Manager Section */}
-        <div className={STYLES.menuSection}>
-          <div className={STYLES.menuTitle}>Social</div>
-          <div className="space-y-1">
-            <NavLink
-              to="/facebook-manager"
-              className={({ isActive }) =>
-                `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
-              }
-            >
-              <span className="text-base flex items-center">
-                <FaFacebook className="mr-2 text-blue-400" />
-                Facebook Manager
-              </span>
-            </NavLink>
+        </div>
+
+        <div className={`${STYLES.footer} mt-auto`}>
+          <div className="text-xs text-center text-indigo-300">
+            <p>Logged in as: <span className="font-semibold">{userId?.substring(0, 6)}...</span></p>
+            <p className="mt-1">Role: <span className="font-semibold capitalize">{userRole}</span></p>
+            {userRole !== 'admin' && (
+              <p className="mt-1 text-xxs">
+                Permissions: {Object.values(userPermissions).filter(Boolean).length} granted
+              </p>
+            )}
           </div>
         </div>
-      </div>
-
-      <div className={`${STYLES.footer} mt-auto`}>
-        <div className="text-xs text-center text-indigo-300">
-          <p>Logged in as: <span className="font-semibold">{userId?.substring(0, 6)}...</span></p>
-          <p className="mt-1">Role: <span className="font-semibold capitalize">{userRole}</span></p>
-          {userRole !== 'admin' && (
-            <p className="mt-1 text-xxs">
-              Permissions: {Object.values(userPermissions).filter(Boolean).length} granted
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 };
 

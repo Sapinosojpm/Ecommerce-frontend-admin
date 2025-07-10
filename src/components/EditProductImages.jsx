@@ -4,6 +4,27 @@ import { toast } from 'react-toastify';
 import { backendUrl } from '../App';
 import { TrashIcon } from '@heroicons/react/24/outline';
 
+// Helper to upload a file to S3 and return the URL
+async function uploadToS3(file, token) {
+  const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ fileType: file.type }),
+  });
+  if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+  const { uploadUrl, fileUrl } = await presignRes.json();
+  const s3Res = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  });
+  if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+  return fileUrl;
+}
+
 const EditProductImages = ({ product, onUpdate }) => {
   const [image1, setImage1] = useState(null);
   const [image2, setImage2] = useState(null);
@@ -41,33 +62,36 @@ const EditProductImages = ({ product, onUpdate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
-      const formData = new FormData();
-      
-      // Add images to formData
-      const imageFiles = [image1, image2, image3, image4].filter(Boolean);
-      for (const [index, file] of imageFiles.entries()) {
-        formData.append(`image${index + 1}`, file);
-      }
-
-      // Add video if exists
-      if (video) {
-        formData.append("video", video);
-      }
-
       const token = localStorage.getItem("authToken");
+      // 1. Upload new images to S3 and collect URLs
+      const imageFiles = [image1, image2, image3, image4].filter(Boolean);
+      const imageUrls = [];
+      for (const file of imageFiles) {
+        if (file.size > 5 * 1024 * 1024) throw new Error('Image size should be less than 5MB');
+        imageUrls.push(await uploadToS3(file, token));
+      }
+      // 2. If no new images, keep existing
+      const finalImageUrls = imageUrls.length > 0 ? imageUrls : product.image || [];
+      // 3. Upload video if present (optional, similar to Add.jsx)
+      let videoUrl = null;
+      if (video) {
+        if (video.size > 50 * 1024 * 1024) throw new Error('Video size should be less than 50MB');
+        videoUrl = await uploadToS3(video, token);
+      } else {
+        videoUrl = product.video || null;
+      }
+      // 4. Send URLs to backend
       const response = await axios.put(
         `${backendUrl}/api/product/updateImages/${product._id}`,
-        formData,
+        { images: finalImageUrls, video: videoUrl },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
+            'Content-Type': 'application/json',
           },
         }
       );
-
       if (response.data.success) {
         toast.success("Product images updated successfully!");
         onUpdate(response.data.product);

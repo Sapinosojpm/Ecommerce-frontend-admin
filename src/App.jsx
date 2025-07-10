@@ -100,11 +100,13 @@ const App = () => {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <aside className="w-64 h-screen fixed top-0 left-0 bg-indigo-800 text-white z-20 flex flex-col">
-        <Sidebar />
-      </aside>
+      {token !== "" && (
+        <aside className="w-64 h-screen fixed top-0 left-0 bg-indigo-800 text-white z-20 flex flex-col">
+          <Sidebar />
+        </aside>
+      )}
       {/* Main Content */}
-      <main className="flex-1 ml-64 bg-gray-20">
+      <main className={`flex-1 ${token !== "" ? 'ml-64' : ''} bg-gray-20`}>
         <ToastContainer position="top-right" />
         {token === "" ? (
           <motion.div

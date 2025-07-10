@@ -46,17 +46,47 @@ const AboutSection = () => {
     setAboutImageFile(e.target.files[0]);
   };
 
+  // Helper to upload image to S3 and return the URL
+  const uploadImageToS3 = async (file) => {
+    if (!file) return null;
+    try {
+      const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileType: file.type }),
+      });
+      if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+      const { uploadUrl, fileUrl } = await presignRes.json();
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type
+        },
+        body: file,
+      });
+      if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+      return fileUrl;
+    } catch (err) {
+      alert('Image upload to S3 failed.');
+      return null;
+    }
+  };
+
   const handleAboutSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    Object.keys(aboutData).forEach((key) => {
-      formData.append(key, aboutData[key]);
-    });
-    if (aboutImageFile) formData.append('image', aboutImageFile);
-
+    let imageUrl = aboutData.image;
+    if (aboutImageFile) {
+      imageUrl = await uploadImageToS3(aboutImageFile);
+      if (!imageUrl) return;
+    }
     try {
-      const response = await axios.put(`${backendUrl}/api/about`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await axios.put(`${backendUrl}/api/about`, {
+        ...aboutData,
+        image: imageUrl,
+      }, {
+        headers: { 'Content-Type': 'application/json' },
       });
       setAboutData(response.data);
       setIsEditing(false);
@@ -162,7 +192,11 @@ const AboutSection = () => {
 
             {aboutData.image && (
               <img
-                src={aboutData.image}
+                src={
+                  aboutData.image?.startsWith('http')
+                    ? aboutData.image
+                    : `${backendUrl}${aboutData.image || ''}`
+                }
                 alt="About Section"
                 className="w-full mt-6 shadow-md rounded-xl"
               />

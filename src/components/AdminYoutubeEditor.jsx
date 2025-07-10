@@ -41,21 +41,39 @@ const AdminPanel = () => {
     }
   };
 
+  // Helper to upload a file to S3 and return the URL
+  async function uploadToS3(file) {
+    const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileType: file.type }),
+    });
+    if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+    const { uploadUrl, fileUrl } = await presignRes.json();
+    const s3Res = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file,
+    });
+    if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+    return fileUrl;
+  }
+
   const handleVideoUpload = async (e) => {
     e.preventDefault();
     if (!videoFile) {
       setMessage("Please select a video file to upload.");
       return;
     }
-
     setUploading(true);
-    const formData = new FormData();
-    formData.append("video", videoFile);
-
     try {
+      // 1. Upload video to S3
+      const videoUrl = await uploadToS3(videoFile);
+      // 2. Send S3 URL to backend
       const res = await fetch(`${backendUrl}/api/youtube/upload-video`, {
-        method: "POST",
-        body: formData,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl }),
       });
       const data = await res.json();
       setMessage(data.message || "Video uploaded successfully!");

@@ -36,27 +36,53 @@ const ContactSection = () => {
     fetchContactData();
   }, []);
 
+  // Helper to upload image to S3 and return the URL
+  const uploadImageToS3 = async (file) => {
+    if (!file) return null;
+    try {
+      const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileType: file.type }),
+      });
+      if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+      const { uploadUrl, fileUrl } = await presignRes.json();
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type
+        },
+        body: file,
+      });
+      if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+      return fileUrl;
+    } catch (err) {
+      alert('Image upload to S3 failed.');
+      return null;
+    }
+  };
+
   // Handle form submission
   const handleContactSubmit = async (e) => {
     e.preventDefault();
-  
-    const formData = new FormData();
-    formData.append('businessName', contactData.businessName);
-    formData.append('address', contactData.address);
-    formData.append('telephone', contactData.telephone);
-    formData.append('email', contactData.email);
-  
+    let imageUrl = contactData.image;
     if (contactImageFile) {
-      formData.append('image', contactImageFile);  // Image file to be uploaded
+      imageUrl = await uploadImageToS3(contactImageFile);
+      if (!imageUrl) return;
     }
-  
     try {
-      const response = await axios.put(`${backendUrl}/api/contact`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await axios.put(`${backendUrl}/api/contact`, {
+        ...contactData,
+        image: imageUrl,
+      }, {
+        headers: { 'Content-Type': 'application/json' },
       });
       setContactData(response.data); // Update with new data
       alert('Contact section updated!');
       setIsEditing(false); // Stop editing
+      setShow(false);
     } catch (error) {
       console.error('Error updating contact section:', error);
       alert('Error updating contact section');
@@ -164,9 +190,13 @@ const ContactSection = () => {
           </p>
           <div>
             {contactData.image && (
-              <img 
-                src={contactData.image}  // Directly use the Cloudinary URL
-                alt="Contact Section" 
+              <img
+                src={
+                  contactData.image?.startsWith('http')
+                    ? contactData.image
+                    : `${backendUrl}${contactData.image || ''}`
+                }
+                alt="Contact Section"
                 className="mt-4 max-w-[200px] h-auto"
               />
             )}

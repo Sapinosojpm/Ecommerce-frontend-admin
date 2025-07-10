@@ -46,54 +46,62 @@ const AdsEditor = () => {
     setImagePreview(URL.createObjectURL(file));
   };
 
-  const uploadImageToServer = async () => {
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("image", image);
-
+  // Helper to upload image to S3 and return the URL
+  const uploadImageToS3 = async (file) => {
+    if (!file) return null;
     try {
-      const { data } = await axios.post(`${backendUrl}/api/upload-image`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const presignRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/upload/presigned-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileType: file.type }),
       });
-      setUploading(false);
-      return data.imageUrl; // Expecting `{ imageUrl: "uploaded_url" }`
-    } catch (error) {
-      setUploading(false);
-      setError("Image upload failed.");
+      if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+      const { uploadUrl, fileUrl } = await presignRes.json();
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type
+        },
+        body: file,
+      });
+      if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+      return fileUrl;
+    } catch (err) {
+      setError('Image upload to S3 failed.');
       return null;
     }
   };
 
   const handleAddAd = async () => {
     if (!image) {
-      setError("Please upload an image.");
+      setError('Please upload an image.');
       return;
     }
-
     setLoading(true);
-    const uploadedImageUrl = await uploadImageToServer();
+    setUploading(true);
+    const uploadedImageUrl = await uploadImageToS3(image);
+    setUploading(false);
     if (!uploadedImageUrl) {
       setLoading(false);
       return;
     }
-
     try {
-      await axios.post(`${backendUrl}/api/ads`, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/ads`, {
         imageUrl: uploadedImageUrl,
         link,
         isActive,
       });
-
       // Reset form fields
       setImage(null);
       setImagePreview(null);
-      setLink("");
+      setLink('');
       setIsActive(true);
-      setError("");
-
+      setError('');
       fetchAds();
     } catch (error) {
-      setError("Failed to add ad.");
+      setError('Failed to add ad.');
     }
     setLoading(false);
   };
@@ -191,7 +199,11 @@ const AdsEditor = () => {
               <tr key={ad._id} className="text-center border">
                 <td className="p-2 border">
                   <img
-                    src={ad.imageUrl}
+                    src={
+                      ad.imageUrl?.startsWith('http')
+                        ? ad.imageUrl
+                        : `${import.meta.env.VITE_BACKEND_URL}${ad.imageUrl || ''}`
+                    }
                     alt="Ad"
                     className="w-20 h-auto mx-auto rounded-lg"
                   />

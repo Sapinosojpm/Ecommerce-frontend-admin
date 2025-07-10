@@ -5,6 +5,9 @@ const JobPopupEditor = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,6 +49,34 @@ const JobPopupEditor = () => {
     }
   };
 
+  // Helper to upload image to S3 and return the URL
+  const uploadImageToS3 = async (file) => {
+    if (!file) return null;
+    try {
+      const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileType: file.type }),
+      });
+      if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+      const { uploadUrl, fileUrl } = await presignRes.json();
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type
+        },
+        body: file,
+      });
+      if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+      return fileUrl;
+    } catch (err) {
+      alert('Image upload to S3 failed.');
+      return null;
+    }
+  };
+
   /** Handle job submission */
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,31 +84,45 @@ const JobPopupEditor = () => {
       alert("Please fill in all fields.");
       return;
     }
-
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    if (image) formData.append("image", image);
-
+    setUploading(true);
+    setUploadError(null);
+    let imageUrl = '';
+    if (image) {
+      imageUrl = await uploadImageToS3(image);
+      if (!imageUrl) {
+        setUploadError('Image upload to S3 failed.');
+        setUploading(false);
+        return;
+      }
+    }
     try {
       const res = await fetch(`${backendUrl}/api/job-posting`, {
         method: "POST",
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          image: imageUrl,
+        }),
       });
-
       const data = await res.json();
       if (data.success) {
         alert("Job posting added successfully!");
         setTitle("");
         setDescription("");
         setImage(null);
+        setImagePreview(null);
+        setIsOpen(false);
         fetchJobs();
       } else {
-        alert("Failed to add job.");
+        setUploadError('Failed to add job.');
       }
     } catch (error) {
-      alert("Error adding job.");
+      setUploadError('Error adding job.');
     }
+    setUploading(false);
   };
 
   /** Handle job deletion */
@@ -164,16 +209,34 @@ const JobPopupEditor = () => {
                 </label>
                 <input
                   type="file"
-                  onChange={(e) => setImage(e.target.files[0])}
+                  onChange={(e) => {
+                    setImage(e.target.files[0]);
+                    if (e.target.files[0]) {
+                      setImagePreview(URL.createObjectURL(e.target.files[0]));
+                    } else {
+                      setImagePreview(null);
+                    }
+                  }}
                   className="w-full p-3 border border-gray-300 rounded-lg"
                 />
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-32 mt-2 object-contain border rounded"
+                  />
+                )}
+                {uploadError && (
+                  <div className="mt-2 text-sm text-red-600">{uploadError}</div>
+                )}
               </div>
 
               <button
                 type="submit"
-                className="w-full p-3 text-white bg-indigo-700 rounded-lg hover:bg-indigo-800"
+                className="w-full p-3 text-white bg-indigo-700 rounded-lg hover:bg-indigo-800 disabled:bg-gray-400"
+                disabled={uploading}
               >
-                Add Job Posting
+                {uploading ? 'Uploading...' : 'Add Job Posting'}
               </button>
             </form>
           </div>
@@ -198,9 +261,13 @@ const JobPopupEditor = () => {
                 <p className="mb-3 text-gray-600">{job.description}</p>
                 {job.image && (
                   <img
-                    src={`${backendUrl}/${job.image.replace(/\\/g, "/")}`} // Ensure proper path formatting
+                    src={
+                      job.image?.startsWith('http')
+                        ? job.image
+                        : `${backendUrl}${job.image || ''}`
+                    }
                     alt="Job"
-                    className="object-cover w-full h-40 mb-3 rounded-lg shadow-md"
+                    className="object-cover w-full h-40 mb-2 rounded-lg"
                   />
                 )}
 

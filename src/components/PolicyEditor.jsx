@@ -21,19 +21,51 @@ const PolicyEditor = () => {
     fetchPolicies();
   }, []);
 
+  // Helper to upload image to S3 and return the URL
+  const uploadImageToS3 = async (file) => {
+    if (!file) return null;
+    try {
+      const presignRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/upload/presigned-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileType: file.type }),
+      });
+      if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+      const { uploadUrl, fileUrl } = await presignRes.json();
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type
+        },
+        body: file,
+      });
+      if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+      return fileUrl;
+    } catch (err) {
+      alert('Image upload to S3 failed.');
+      return null;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    if (image) formData.append('image', image);
-
+    let imageUrl = '';
+    if (image) {
+      imageUrl = await uploadImageToS3(image);
+      if (!imageUrl) return;
+    }
     try {
       if (editingPolicy) {
         const response = await axios.put(
           `${import.meta.env.VITE_BACKEND_URL}/api/policies/${editingPolicy}`,
-          formData,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
+          {
+            title,
+            description,
+            image: imageUrl || undefined,
+          },
+          { headers: { 'Content-Type': 'application/json' } }
         );
         setPolicies((prev) =>
           prev.map((policy) => (policy._id === editingPolicy ? response.data : policy))
@@ -41,12 +73,15 @@ const PolicyEditor = () => {
       } else {
         const response = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/policies`,
-          formData,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
+          {
+            title,
+            description,
+            image: imageUrl,
+          },
+          { headers: { 'Content-Type': 'application/json' } }
         );
         setPolicies([...policies, response.data]);
       }
-
       setTitle('');
       setDescription('');
       setImage(null);
@@ -109,7 +144,11 @@ const PolicyEditor = () => {
           <div key={policy._id} className="p-6 space-y-4 text-center bg-white shadow rounded-2xl">
             {policy.image && (
               <img
-                src={`${import.meta.env.VITE_BACKEND_URL}${policy.image}`}
+                src={
+                  policy.image?.startsWith('http')
+                    ? policy.image
+                    : `${import.meta.env.VITE_BACKEND_URL}${policy.image || ''}`
+                }
                 alt={policy.title}
                 className="object-contain w-20 h-20 mx-auto"
               />

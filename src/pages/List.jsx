@@ -1098,7 +1098,7 @@ const List = ({ token }) => {
                 >
                   <td className="sticky left-0 z-10 px-6 py-4 bg-white whitespace-nowrap">
                     <div className="flex gap-2">
-                      {product.image?.slice(0, 3).map((img, index) => (
+                      {product.image && product.image.length > 0 && product.image.slice(0, 3).map((img, index) => (
                         <img
                           key={index}
                           src={img}
@@ -1106,7 +1106,7 @@ const List = ({ token }) => {
                           className="object-cover w-10 h-10 rounded"
                         />
                       ))}
-                      {product.image?.length > 3 && (
+                      {product.image && product.image.length > 3 && (
                         <div className="flex items-center justify-center w-10 h-10 text-sm text-gray-500 bg-gray-100 rounded">
                           +{product.image.length - 3}
                         </div>

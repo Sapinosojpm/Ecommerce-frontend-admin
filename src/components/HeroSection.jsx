@@ -34,6 +34,27 @@ const HeroSection = () => {
     fetchHero();
   }, []);
 
+  // Helper to upload a file to S3 and return the URL
+  async function uploadToS3(file, token) {
+    const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ fileType: file.type }),
+    });
+    if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+    const { uploadUrl, fileUrl } = await presignRes.json();
+    const s3Res = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file,
+    });
+    if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+    return fileUrl;
+  }
+
   const handleSubmit = async (e) => {
   e.preventDefault();
   setIsSubmitting(true);
@@ -44,22 +65,29 @@ const HeroSection = () => {
     if (!token) {
       throw new Error('Authentication required');
     }
-
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('subtitle', subtitle);
-    formData.append('type', type);
-    if (image) formData.append('image', image);
-    if (video) formData.append('video', video);
-
+    let imageUrl = null;
+    let videoUrl = null;
+    if (type === 'image' && image) {
+      imageUrl = await uploadToS3(image, token);
+    }
+    if (type === 'video' && video) {
+      videoUrl = await uploadToS3(video, token);
+    }
+    const payload = {
+      title,
+      subtitle,
+      type,
+      image: imageUrl,
+      video: videoUrl,
+    };
     const response = await fetch(`${backendUrl}/api/hero`, {
       method: 'PUT',
-      body: formData,
       headers: {
         'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(payload),
     });
-
     const result = await response.json();
 
     if (!response.ok) {

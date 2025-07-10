@@ -5,6 +5,29 @@ import { backendUrl, currency } from "../App";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { toast } from "react-toastify";
 
+// Helper to upload a file to S3 and return the URL
+async function uploadToS3(file, token) {
+  const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ fileType: file.type }),
+  });
+  if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+  const { uploadUrl, fileUrl } = await presignRes.json();
+  const s3Res = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type
+    },
+    body: file,
+  });
+  if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+  return fileUrl;
+}
+
 const Add = () => {
   const [image1, setImage1] = useState(null);
   const [image2, setImage2] = useState(null);
@@ -321,43 +344,45 @@ const Add = () => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append("name", name.trim());
-      formData.append("description", description.trim());
-      formData.append("price", Number(price));
-      formData.append("additionalCapital", JSON.stringify(additionalCapital));
-      formData.append("vat", Number(vat));
-      formData.append("capital", Number(capital));
-      formData.append("quantity", calculateTotalQuantity());
-      formData.append("category", category);
-      formData.append("bestseller", bestseller ? "true" : "false");
-      formData.append("discount", Number(discount));
-      formData.append("weight", Number(weight));
-      formData.append("variations", JSON.stringify(variations));
-
-      // Handle image uploads with validation
+      // 1. Upload images to S3 and collect URLs
       const imageFiles = [image1, image2, image3, image4].filter(Boolean);
-      for (const [index, file] of imageFiles.entries()) {
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error(`Image ${index + 1} size should be less than 5MB`);
-        }
-        formData.append(`image${index + 1}`, file);
+      const imageUrls = [];
+      for (const file of imageFiles) {
+        if (file.size > 5 * 1024 * 1024) throw new Error('Image size should be less than 5MB');
+        imageUrls.push(await uploadToS3(file, token));
       }
-
+      // 2. Upload video to S3 (if present)
+      let videoUrl = null;
       if (video) {
-        if (video.size > 50 * 1024 * 1024) {
-          throw new Error("Video size should be less than 50MB");
-        }
-        formData.append("video", video);
+        if (video.size > 50 * 1024 * 1024) throw new Error('Video size should be less than 50MB');
+        videoUrl = await uploadToS3(video, token);
       }
-
-      const response = await axios.post(`${backendUrl}/api/product/add`, formData, {
+      // 3. Prepare product data
+      const productData = {
+        name: name.trim(),
+        description: description.trim(),
+        price: Number(price),
+        additionalCapital: JSON.stringify(additionalCapital),
+        vat: Number(vat),
+        capital: Number(capital),
+        quantity: calculateTotalQuantity(),
+        category,
+        bestseller: bestseller ? "true" : "false",
+        discount: Number(discount),
+        weight: Number(weight),
+        variations: JSON.stringify(variations),
+        images: imageUrls,
+        video: videoUrl,
+      };
+      // Debug log
+      console.log("Sending productData to backend:", productData);
+      // 4. Send product data to backend
+      const response = await axios.post(`${backendUrl}/api/product/add`, productData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
+          'Content-Type': 'application/json',
         },
       });
-
       if (response.data.success) {
         toast.success("Product added successfully!");
         // Reset form or redirect

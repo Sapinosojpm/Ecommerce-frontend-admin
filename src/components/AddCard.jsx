@@ -10,6 +10,9 @@ const AddCard = () => {
     const [error, setError] = useState("");
     const [cards, setCards] = useState([]);
     const token = localStorage.getItem("authToken");
+    const [imagePreview, setImagePreview] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState("");
     // Fetch the list of cards from the backend
     const fetchCards = async () => {
         try {
@@ -47,23 +50,62 @@ const AddCard = () => {
         }
 
         setImage(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    // Helper to upload image to S3 and return the URL
+    const uploadImageToS3 = async (file) => {
+        if (!file) return null;
+        try {
+            const presignRes = await fetch(`${backendUrl}/api/upload/presigned-url`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ fileType: file.type }),
+            });
+            if (!presignRes.ok) throw new Error('Failed to get S3 pre-signed URL');
+            const { uploadUrl, fileUrl } = await presignRes.json();
+            const s3Res = await fetch(uploadUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': file.type
+                },
+                body: file,
+            });
+            if (!s3Res.ok) throw new Error('Failed to upload file to S3');
+            return fileUrl;
+        } catch (err) {
+            setUploadError('Image upload to S3 failed.');
+            return null;
+        }
     };
 
     const onSubmitHandler = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
         setError("");
-
+        setUploading(true);
+        setUploadError("");
+        let imageUrl = "";
+        if (image) {
+            imageUrl = await uploadImageToS3(image);
+            if (!imageUrl) {
+                setUploading(false);
+                setIsSubmitting(false);
+                return;
+            }
+        }
         try {
-            const formData = new FormData();
-            formData.append("name", name);
-            formData.append("description", description);
-            if (image) formData.append("image", image);
-
-            const response = await axios.post(`${backendUrl}/api/card/addCard`, formData, {
+            const response = await axios.post(`${backendUrl}/api/card/addCard`, {
+                name,
+                description,
+                image: imageUrl,
+            }, {
                 headers: { 
                     Authorization: `Bearer ${token}`,
-                    "Content-Type": "multipart/form-data"
+                    'Content-Type': 'application/json',
                 }
             });
 
@@ -72,6 +114,7 @@ const AddCard = () => {
                 setName("");
                 setDescription("");
                 setImage(null);
+                setImagePreview(null);
                 fetchCards();
             } else {
                 throw new Error(response.data.message || "Something went wrong.");
@@ -81,6 +124,7 @@ const AddCard = () => {
             setError(error.response?.data?.message || "An unexpected error occurred.");
             alert("Something went wrong. Please try again!");
         } finally {
+            setUploading(false);
             setIsSubmitting(false);
         }
     };
@@ -128,14 +172,17 @@ const AddCard = () => {
                     />
 
                     {/* Preview Image */}
-                    {image && (
+                    {imagePreview && (
                         <div className="mt-3">
                             <img
                                 className="object-cover w-24 h-24 border border-gray-300 rounded"
-                                src={URL.createObjectURL(image)}
+                                src={imagePreview}
                                 alt="Preview"
                             />
                         </div>
+                    )}
+                    {uploadError && (
+                        <div className="mt-2 text-sm text-red-600">{uploadError}</div>
                     )}
                 </div>
 
@@ -177,7 +224,13 @@ const AddCard = () => {
                         cards.map((card) => (
                             <div key={card._id} className="p-4 border rounded-lg shadow-lg">
                                 <img
-                                    src={card.image || "https://via.placeholder.com/150"}
+                                    src={
+                                        card.image?.startsWith('http')
+                                            ? card.image
+                                            : card.image
+                                                ? `${backendUrl}${card.image}`
+                                                : "https://via.placeholder.com/150"
+                                    }
                                     alt={card.name}
                                     className="object-cover w-full h-48 mb-4 rounded-md"
                                 />
