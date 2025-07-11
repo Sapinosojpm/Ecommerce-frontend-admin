@@ -1221,7 +1221,7 @@ const OrderAnalytics = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 items-center justify-center p-6">
+    <div className="min-h-screen bg-gray-50 items-center justify-center p-6 overflow-x-hidden">
       {/* Header Section */}
       <div className="p-6 bg-[#e3e6eb] rounded-2xl shadow-[8px_8px_20px_rgba(0,0,0,0.08),-4px_-4px_12px_rgba(255,255,255,0.8)] border border-gray-100">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">

@@ -74,7 +74,7 @@ const PERMISSION_MAP = {
 const STYLES = {
   active: "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg",
   inactive: "text-indigo-100 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-indigo-500 hover:text-white hover:shadow-lg transition-all duration-200",
-  sidebar: "w-64 h-screen text-sm font-medium bg-indigo-800 shadow-xl",
+  sidebar: "w-64 h-full flex flex-col text-sm font-medium bg-indigo-800 shadow-xl",
   header: "px-6 py-8 border-b border-indigo-700",
   menuSection: "px-4 py-4",
   menuTitle: "mb-3 text-xs font-semibold tracking-wider text-indigo-300 uppercase",
@@ -297,67 +297,67 @@ const Sidebar = () => {
         `}
         style={{ minWidth: '16rem', maxWidth: '16rem' }}
       >
-        <div className={STYLES.header}>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="mt-1 text-xs text-indigo-300">
-            {userRole === 'admin' ? 'Admin Panel' : 'User Panel'}
-          </p>
-        </div>
+      <div className={STYLES.header}>
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <p className="mt-1 text-xs text-indigo-300">
+          {userRole === 'admin' ? 'Admin Panel' : 'User Panel'}
+        </p>
+      </div>
 
-        <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 180px)' }}>
-          {filteredSections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className={STYLES.menuSection}>
-              <p className={STYLES.menuTitle}>
-                {section.title}
-              </p>
-              <div className="space-y-1">
-                {section.items.map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
-                    }
-                  >
-                    <span className="text-base">
-                      {item.icon}
-                    </span>
-                    <span>{item.text}</span>
-                  </NavLink>
-                ))}
-              </div>
-            </div>
-          ))}
-          {/* Facebook Manager Section */}
-          <div className={STYLES.menuSection}>
-            <div className={STYLES.menuTitle}>Social</div>
+      <div className="overflow-y-auto flex-1">
+        {filteredSections.map((section, sectionIndex) => (
+          <div key={sectionIndex} className={STYLES.menuSection}>
+            <p className={STYLES.menuTitle}>
+              {section.title}
+            </p>
             <div className="space-y-1">
-              <NavLink
-                to="/facebook-manager"
-                className={({ isActive }) =>
-                  `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
-                }
-              >
-                <span className="text-base flex items-center">
-                  <FaFacebook className="mr-2 text-blue-400" />
-                  Facebook Manager
-                </span>
-              </NavLink>
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
+                  }
+                >
+                  <span className="text-base">
+                    {item.icon}
+                  </span>
+                  <span>{item.text}</span>
+                </NavLink>
+              ))}
             </div>
           </div>
-        </div>
-
-        <div className={`${STYLES.footer} mt-auto`}>
-          <div className="text-xs text-center text-indigo-300">
-            <p>Logged in as: <span className="font-semibold">{userId?.substring(0, 6)}...</span></p>
-            <p className="mt-1">Role: <span className="font-semibold capitalize">{userRole}</span></p>
-            {userRole !== 'admin' && (
-              <p className="mt-1 text-xxs">
-                Permissions: {Object.values(userPermissions).filter(Boolean).length} granted
-              </p>
-            )}
+        ))}
+        {/* Facebook Manager Section */}
+        <div className={STYLES.menuSection}>
+          <div className={STYLES.menuTitle}>Social</div>
+          <div className="space-y-1">
+            <NavLink
+              to="/facebook-manager"
+              className={({ isActive }) =>
+                `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
+              }
+            >
+              <span className="text-base flex items-center">
+                <FaFacebook className="mr-2 text-blue-400" />
+                Facebook Manager
+              </span>
+            </NavLink>
           </div>
         </div>
+      </div>
+
+      <div className={`${STYLES.footer} mt-auto`}>
+        <div className="text-xs text-center text-indigo-300">
+          <p>Logged in as: <span className="font-semibold">{userId?.substring(0, 6)}...</span></p>
+          <p className="mt-1">Role: <span className="font-semibold capitalize">{userRole}</span></p>
+          {userRole !== 'admin' && (
+            <p className="mt-1 text-xxs">
+              Permissions: {Object.values(userPermissions).filter(Boolean).length} granted
+            </p>
+          )}
+        </div>
+      </div>
       </aside>
     </>
   );
