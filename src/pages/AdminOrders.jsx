@@ -482,6 +482,16 @@ const MANUAL_CARRIERS = [
     }));
   };
 
+  const viewOrDownloadReceipt = (order) => {
+    // If S3 URL exists, open/download directly
+    if (order.receiptImage && order.receiptImage.url) {
+      window.open(order.receiptImage.url, '_blank');
+      return;
+    }
+    // Fallback: try to download from backend (legacy/local uploads)
+    downloadReceipt(order._id);
+  };
+
   return (
     <div className="p-4">
       {/* Header */}
@@ -757,7 +767,7 @@ const MANUAL_CARRIERS = [
                   {order.paymentMethod === "receipt_upload" && (
                     <>
                       <button
-                        onClick={() => downloadReceipt(order._id)}
+                        onClick={() => viewOrDownloadReceipt(order)}
                         className="px-3 py-1 text-xs text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600"
                       >
                         View Receipt

@@ -325,9 +325,10 @@ const JobPopupEditor = () => {
                       <td className="p-3 border">{applicant.experience}</td>
                       <td className="flex justify-center p-3 border">
                         <a
-                          href={`${backendUrl}/${applicant.resume}`}
+                          href={applicant.resume && applicant.resume.startsWith('http') ? applicant.resume : `${backendUrl}/${applicant.resume}`}
                           className="px-2 py-1 text-indigo-600 border border-indigo-600 rounded-lg underline-none hover:bg-indigo-900 hover:text-white"
                           target="_blank"
+                          rel="noopener noreferrer"
                         >
                           View Resume
                         </a>
