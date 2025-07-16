@@ -7,6 +7,8 @@ import {
   FaEdit, FaHome, FaQuestionCircle, FaPhoneAlt, FaComments,
   FaLock, FaUserCog, FaExclamationTriangle, FaFacebook, FaBars
 } from 'react-icons/fa';
+import { assets } from "../assets/assets";
+import { backendUrl } from "../App";
 
 // Constants
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -17,31 +19,31 @@ const MENU_SECTIONS = [
   {
     title: 'Main Menu',
     items: [
-      { path: '/orderAnalytics', icon: <FaTachometerAlt />, text: 'Dashboard', permission: 'dashboard' },
-      { path: '/add', icon: <FaPlus />, text: 'Add items', permission: 'addItems' },
-      { path: '/list', icon: <FaList />, text: 'List items', permission: 'listItems' },
-      { path: '/orders', icon: <FaBox />, text: 'Orders', permission: 'orders' },
-      { path: '/users', icon: <FaUsers />, text: 'Users', permission: 'users' },
+      { path: '/admin/orderAnalytics', icon: <FaTachometerAlt />, text: 'Dashboard', permission: 'dashboard' },
+      { path: '/admin/add', icon: <FaPlus />, text: 'Add items', permission: 'addItems' },
+      { path: '/admin/list', icon: <FaList />, text: 'List items', permission: 'listItems' },
+      { path: '/admin/orders', icon: <FaBox />, text: 'Orders', permission: 'orders' },
+      { path: '/admin/users', icon: <FaUsers />, text: 'Users', permission: 'users' },
     ]
   },
   {
     title: 'E-Commerce',
     items: [
-      { path: '/voucheramount', icon: <FaPercentage />, text: 'Voucher Amount', permission: 'voucherAmount' },
-      { path: '/category', icon: <FaClipboard />, text: 'Category', permission: 'category' },
-      { path: '/region', icon: <FaMapMarkerAlt />, text: 'Region Fee', permission: 'regionFee' },
-      { path: '/weight', icon: <FaClipboard />, text: 'Fee/Kilo', permission: 'feeKilo' },
-      { path: '/deals', icon: <FaPercentage />, text: 'Deals', permission: 'deals' },
+      { path: '/admin/voucheramount', icon: <FaPercentage />, text: 'Voucher Amount', permission: 'voucherAmount' },
+      { path: '/admin/category', icon: <FaClipboard />, text: 'Category', permission: 'category' },
+      { path: '/admin/region', icon: <FaMapMarkerAlt />, text: 'Region Fee', permission: 'regionFee' },
+      { path: '/admin/weight', icon: <FaClipboard />, text: 'Fee/Kilo', permission: 'feeKilo' },
+      { path: '/admin/deals', icon: <FaPercentage />, text: 'Deals', permission: 'deals' },
     ]
   },
   {
     title: 'Content',
     items: [
-      { path: '/homepage', icon: <FaHome />, text: 'Home Page', permission: 'homepage' },
-      { path: '/about-page', icon: <FaQuestionCircle />, text: 'About Page', permission: 'aboutPage' },
-      { path: '/contact-page', icon: <FaPhoneAlt />, text: 'Contact Page', permission: 'contactPage' },
-      { path: '/popup', icon: <FaComments />, text: 'Popup Manager', permission: 'popupManager' },
-      { path: '/addCard', icon: <FaClipboard />, text: 'Portfolio', permission: 'portfolio' },
+      { path: '/admin/homepage', icon: <FaHome />, text: 'Home Page', permission: 'homepage' },
+      { path: '/admin/about-page', icon: <FaQuestionCircle />, text: 'About Page', permission: 'aboutPage' },
+      { path: '/admin/contact-page', icon: <FaPhoneAlt />, text: 'Contact Page', permission: 'contactPage' },
+      { path: '/admin/popup', icon: <FaComments />, text: 'Popup Manager', permission: 'popupManager' },
+      // { path: '/admin/addCard', icon: <FaClipboard />, text: 'Portfolio', permission: 'portfolio' },
     ]
   },
 ];
@@ -65,7 +67,7 @@ const PERMISSION_MAP = {
   '/about-page': 'aboutPage',
   '/contact-page': 'contactPage',
   '/popup': 'popupManager',
-  '/addCard': 'portfolio',
+  // '/addCard': 'portfolio',
   '/profile': 'dashboard',
   '/change-password': 'dashboard'
 };
@@ -97,8 +99,8 @@ const Sidebar = () => {
   const [userId, setUserId] = useState(null);
   const [error, setError] = useState(null);
   const [userDetails, setUserDetails] = useState({});
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [token, setToken] = useState(localStorage.getItem(AUTH_TOKEN_KEY));
+  const [logoUrl, setLogoUrl] = useState("");
   
   const userDataFetched = useRef(false);
 
@@ -185,14 +187,25 @@ const Sidebar = () => {
   // Redirect from root or login to dashboard
   useEffect(() => {
     if (['/', '/login'].includes(location.pathname) && userRole) {
-      navigate('/orderAnalytics');
+      navigate('/admin/orderAnalytics');
     }
   }, [location.pathname, navigate, userRole]);
 
   // Add effect to close sidebar on route change (mobile UX)
   useEffect(() => {
-    setSidebarOpen(false);
+    // setSidebarOpen(false); // Removed sidebarOpen state, so this effect is no longer needed
   }, [location.pathname]);
+
+  // Fetch logo on mount
+  useEffect(() => {
+    fetch(`${backendUrl}/api/logo`)
+      .then((res) => res.json())
+      .then((data) => setLogoUrl(data.imageUrl))
+      .catch((error) => {
+        console.error("Error fetching logo:", error);
+        setLogoUrl(""); // fallback or default logo if needed
+      });
+  }, []);
 
   /**
    * Checks if user has permission for specific routes
@@ -218,6 +231,16 @@ const Sidebar = () => {
     setError(null);
     userDataFetched.current = false;
     fetchUserDetails(true);
+  };
+
+  // Logout logic from Navbar
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("role");
+    localStorage.removeItem("botHelloShown");
+    setToken && setToken("");
+    window.location.href = "/login";
   };
 
   // Loading state
@@ -253,12 +276,12 @@ const Sidebar = () => {
   if (filteredSections.length === 0) {
     return (
       <div className={STYLES.sidebar}>
-        <div className={STYLES.header}>
+        {/* <div className={STYLES.header}>
           <h1 className="text-2xl font-bold text-white">Dashboard</h1>
           <p className="mt-1 text-xs text-indigo-300">
             {userRole === 'admin' ? 'Admin Panel' : 'User Panel'}
           </p>
-        </div>
+        </div> */}
 
         <div className="p-4">
           <div className="p-3 text-center text-red-100 bg-red-900 rounded-lg">
@@ -283,81 +306,90 @@ const Sidebar = () => {
   // Main sidebar render
   return (
     <>
-      <button
-        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-indigo-700 text-white md:hidden"
-        onClick={() => setSidebarOpen((open) => !open)}
-        aria-label="Open sidebar"
-      >
-        <FaBars size={24} />
-      </button>
+      {/* Removed hamburger button */}
       <aside
         className={`fixed top-0 left-0 z-40 h-full transition-transform duration-300 md:translate-x-0 md:static md:block
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           ${STYLES.sidebar}
         `}
-        style={{ minWidth: '16rem', maxWidth: '16rem' }}
+        style={{ minWidth: '16rem', maxWidth: '16rem', display: 'flex', flexDirection: 'column' }}
       >
-      <div className={STYLES.header}>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="mt-1 text-xs text-indigo-300">
-          {userRole === 'admin' ? 'Admin Panel' : 'User Panel'}
-        </p>
-      </div>
-
-      <div className="overflow-y-auto flex-1">
-        {filteredSections.map((section, sectionIndex) => (
-          <div key={sectionIndex} className={STYLES.menuSection}>
-            <p className={STYLES.menuTitle}>
-              {section.title}
-            </p>
+        {/* Logo at the top */}
+        <div className="flex flex-col items-center py-6">
+          <img
+            className="w-auto h-12 mb-2"
+            src={logoUrl || assets.ecommerce}
+            alt="Logo"
+            style={{
+              filter: `
+                drop-shadow(1px 0 white)
+                drop-shadow(-1px 0 white)
+                drop-shadow(0 1px white)
+                drop-shadow(0 -1px white)
+                drop-shadow(1px 1px white)
+                drop-shadow(-1px -1px white)
+                drop-shadow(-1px 1px white)
+                drop-shadow(1px -1px white)
+              `,
+            }}
+          />
+        </div>
+        {/* <div className={STYLES.header}> */}
+          {/* <h1 className="text-2xl font-bold text-white">Dashboard</h1> */}
+          {/* Removed Admin Panel/User Panel label */}
+        {/* </div> */}
+        <div className="overflow-y-auto flex-1">
+          {filteredSections.map((section, sectionIndex) => (
+            <div key={sectionIndex} className={STYLES.menuSection}>
+              <p className={STYLES.menuTitle}>
+                {section.title}
+              </p>
+              <div className="space-y-1">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
+                    }
+                    // onClick={() => setSidebarOpen(false)} // Removed sidebarOpen state
+                  >
+                    <span className="text-base">
+                      {item.icon}
+                    </span>
+                    <span>{item.text}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          ))}
+          {/* Facebook Manager Section */}
+          <div className={STYLES.menuSection}>
+            <div className={STYLES.menuTitle}>Social</div>
             <div className="space-y-1">
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
-                  }
-                >
-                  <span className="text-base">
-                    {item.icon}
-                  </span>
-                  <span>{item.text}</span>
-                </NavLink>
-              ))}
+              <NavLink
+                to="/facebook-manager"
+                className={({ isActive }) =>
+                  `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
+                }
+                // onClick={() => setSidebarOpen(false)} // Removed sidebarOpen state
+              >
+                <span className="text-base flex items-center">
+                  <FaFacebook className="mr-2 text-blue-400" />
+                  Facebook Manager
+                </span>
+              </NavLink>
             </div>
           </div>
-        ))}
-        {/* Facebook Manager Section */}
-        <div className={STYLES.menuSection}>
-          <div className={STYLES.menuTitle}>Social</div>
-          <div className="space-y-1">
-            <NavLink
-              to="/facebook-manager"
-              className={({ isActive }) =>
-                `${STYLES.menuItem} ${isActive ? STYLES.active : STYLES.inactive}`
-              }
-            >
-              <span className="text-base flex items-center">
-                <FaFacebook className="mr-2 text-blue-400" />
-                Facebook Manager
-              </span>
-            </NavLink>
-          </div>
         </div>
-      </div>
-
-      <div className={`${STYLES.footer} mt-auto`}>
-        <div className="text-xs text-center text-indigo-300">
-          <p>Logged in as: <span className="font-semibold">{userId?.substring(0, 6)}...</span></p>
-          <p className="mt-1">Role: <span className="font-semibold capitalize">{userRole}</span></p>
-          {userRole !== 'admin' && (
-            <p className="mt-1 text-xxs">
-              Permissions: {Object.values(userPermissions).filter(Boolean).length} granted
-            </p>
-          )}
+        {/* Sticky footer with logout button always visible */}
+        <div className="p-4 border-t border-indigo-700 bg-indigo-800 sticky bottom-0 w-full">
+          <button
+            onClick={logout}
+            className="w-full px-5 py-2 text-sm font-semibold text-white transition bg-indigo-700 rounded-full shadow-md hover:bg-indigo-800"
+          >
+            Logout
+          </button>
         </div>
-      </div>
       </aside>
     </>
   );
@@ -370,7 +402,7 @@ const Sidebar = () => {
 export const PermissionGuard = ({ children, requiredPermission, userRole, userPermissions }) => {
   if (userRole === 'admin') return <>{children}</>;
   if (userPermissions && userPermissions[requiredPermission]) return <>{children}</>;
-  return <Navigate to="/orderAnalytics" replace />;
+  return <Navigate to="/admin/orderAnalytics" replace />;
 };
 
 PermissionGuard.propTypes = {
