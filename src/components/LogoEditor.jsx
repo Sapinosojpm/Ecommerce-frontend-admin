@@ -52,10 +52,10 @@ const LogoEditor = () => {
 
   return (
     <div className="flex justify-center bg-gray-100">
-      <div className="w-full max-w-md p-8 m-8 bg-white rounded-lg shadow-lg">
+      <div className="flex items-center justify-center gap-4 w-full p-8 m-8 bg-white rounded-lg shadow-lg">
         {/* <h2 className="mb-6 text-2xl font-bold text-center">Logo</h2> */}
 
-        {logo && <img src={logo} alt="Current Logo" className="w-32 mx-auto mb-4" />}
+        
 
         <form onSubmit={handleUpload}>
           <input
@@ -71,6 +71,10 @@ const LogoEditor = () => {
             Upload Logo
           </button>
         </form>
+        <div className="flex items-center justify-center m-6">
+        {logo && <img src={logo} alt="Current Logo" className="w-60 mx-auto mb-4" />}
+        </div>
+        
 
         {message && <p className="mt-4 text-center text-green-500">{message}</p>}
       </div>

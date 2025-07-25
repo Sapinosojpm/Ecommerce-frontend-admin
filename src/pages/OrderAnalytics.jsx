@@ -4,7 +4,7 @@ import { backendUrl, currency } from "../App";
 import { toast } from "react-toastify";
 import Chart from "chart.js/auto";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import ViewersTracker from "../components/ViewersTracker";
 import DatePicker from "react-datepicker";
@@ -13,6 +13,8 @@ import Review from "../components/Review";
 
 import Plot from "react-plotly.js";
 import { FaUserShield, FaUserTie, FaUser } from 'react-icons/fa';
+import Papa from "papaparse";
+import logo from "../assets/logo.png"; // If you have a logo, otherwise comment this out
 
 const OrderAnalytics = () => {
   const [orders, setOrders] = useState([]);
@@ -65,6 +67,7 @@ const OrderAnalytics = () => {
   });
   const [analysisLevel, setAnalysisLevel] = useState("monthly");
   const [csvUploading, setCsvUploading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   // Chart references
   const statusChartRef = useRef(null);
@@ -833,160 +836,153 @@ const OrderAnalytics = () => {
   }, []);
 
   // Export to PDF
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Order Analytics Report", 14, 15);
+  const exportToPDF = async () => {
+    try {
+      setPdfLoading(true);
+      const doc = new jsPDF();
+      // Branding/Header
+      // Uncomment if you have a logo: doc.addImage(logo, 'PNG', 10, 5, 30, 15);
+      doc.setFontSize(18);
+      doc.text("Order Analytics Report", 50, 15);
+      doc.setFontSize(10);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 150, 15, { align: 'right' });
 
-    // Summary Table
-    doc.autoTable({
-      startY: 25,
-      head: [["Metric", "Value"]],
-      body: [
-        ["Total Sales", `${currency}${formatNumber(analytics.totalSales)}`],
-        [
-          "Total Capital",
-          `${currency}${formatNumber(analytics.totalCombinedCapital)}`,
+      // Summary Table
+      autoTable(doc, {
+        startY: 25,
+        head: [["Metric", "Value"]],
+        body: [
+          ["Total Sales", `${currency}${formatNumber(analytics.totalSales)}`],
+          ["Total Capital", `${currency}${formatNumber(analytics.totalCombinedCapital)}`],
+          ["  - Base Capital", `${currency}${formatNumber(analytics.totalCapital)}`],
+          ["  - Additional Capital", `${currency}${formatNumber(analytics.totalAdditionalCapital)}`],
+          ["Total Profit", `${currency}${formatNumber(analytics.totalProfit)}`],
+          ["Profit Margin", `${(analytics.totalSales > 0 ? (analytics.totalProfit / analytics.totalSales) * 100 : 0).toFixed(2)}%`],
+          ["Total VAT", `${currency}${formatNumber(analytics.totalVAT)}`],
+          ["VAT Percentage", `${analytics.vatPercentage.toFixed(2)}%`],
+          ["Total Orders", formatNumber(analytics.totalOrders)],
+          ["Average Order Value", `${currency}${(analytics.averageOrderValue || 0).toFixed(2)}`],
+          ["Repeat Customers", formatNumber(analytics.customerMetrics.repeatCustomers)],
         ],
-        [
-          "  - Base Capital",
-          `${currency}${formatNumber(analytics.totalCapital)}`,
-        ],
-        [
-          "  - Additional Capital",
-          `${currency}${formatNumber(analytics.totalAdditionalCapital)}`,
-        ],
-        ["Total Profit", `${currency}${formatNumber(analytics.totalProfit)}`],
-        [
-          "Profit Margin",
-          `${(analytics.totalSales > 0
-            ? (analytics.totalProfit / analytics.totalSales) * 100
-            : 0
-          ).toFixed(2)}%`,
-        ],
-        ["Total VAT", `${currency}${formatNumber(analytics.totalVAT)}`],
-        ["VAT Percentage", `${analytics.vatPercentage.toFixed(2)}%`],
-        ["Total Orders", formatNumber(analytics.totalOrders)],
-        [
-          "Average Order Value",
-          `${currency}${(analytics.averageOrderValue || 0).toFixed(2)}`,
-        ],
-        [
-          "Repeat Customers",
-          formatNumber(analytics.customerMetrics.repeatCustomers),
-        ],
-      ],
-    });
-
-    // Order Status Table
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 10,
-      head: [["Order Status", "Count"]],
-      body: Object.entries(analytics.orderStatusDistribution).map(
-        ([status, count]) => [status, formatNumber(count)]
-      ),
-    });
-
-    // Time-based Analysis Table
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 10,
-      head: [
-        [`Time Period (${analysisLevel})`, "Sales", "Capital", "Profit", "VAT"],
-      ],
-      body: Object.entries(
-        analytics.timeBasedAnalysis[analysisLevel].sales
-      ).map(([period, sales]) => [
-        period,
-        `${currency}${formatNumber(sales)}`,
-        `${currency}${formatNumber(
-          analytics.timeBasedAnalysis[analysisLevel].capital[period] || 0
-        )}`,
-        `${currency}${formatNumber(
-          analytics.timeBasedAnalysis[analysisLevel].profit[period] || 0
-        )}`,
-        `${currency}${formatNumber(
-          analytics.timeBasedAnalysis[analysisLevel].vat[period] || 0
-        )}`,
-      ]),
-    });
-
-    // Product Sales Table (Top 10 Products)
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 10,
-      head: [["Product Name", "Quantity Sold"]],
-      body: Object.entries(analytics.topProducts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([name, qty]) => [name, formatNumber(qty)]),
-    });
-
-    // Low Stock Products Table
-    if (analytics.lowStockProducts.length > 0) {
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 10,
-        head: [["Product Name", "Remaining Quantity", "Status"]],
-        body: analytics.lowStockProducts
-          .map((product) => {
-            const totalQuantity =
-              product.variations?.reduce((sum, variation) => {
-                return (
-                  sum +
-                  variation.options?.reduce((optSum, option) => {
-                    return optSum + (option.quantity || 0);
-                  }, 0)
-                );
-              }, 0) ||
-              product.quantity ||
-              0;
-            return [
-              product.name,
-              formatNumber(totalQuantity),
-              totalQuantity < 5 ? "Critical" : "Low",
-            ];
-          })
-          .sort((a, b) => a[1] - b[1]),
       });
+
+      // Order Status Table
+      autoTable(doc, {
+        startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 35,
+        head: [["Order Status", "Count"]],
+        body: Object.entries(analytics.orderStatusDistribution).map(
+          ([status, count]) => [status, formatNumber(count)]
+        ),
+      });
+
+      // Time-based Analysis Table
+      autoTable(doc, {
+        startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 45,
+        head: [[`Time Period (${analysisLevel})`, "Sales", "Capital", "Profit", "VAT"]],
+        body: Object.entries(
+          analytics.timeBasedAnalysis[analysisLevel].sales
+        ).map(([period, sales]) => [
+          period,
+          `${currency}${formatNumber(sales)}`,
+          `${currency}${formatNumber(
+            analytics.timeBasedAnalysis[analysisLevel].capital[period] || 0
+          )}`,
+          `${currency}${formatNumber(
+            analytics.timeBasedAnalysis[analysisLevel].profit[period] || 0
+          )}`,
+          `${currency}${formatNumber(
+            analytics.timeBasedAnalysis[analysisLevel].vat[period] || 0
+          )}`,
+        ]),
+      });
+
+      // Product Sales Table (Top 10 Products)
+      autoTable(doc, {
+        startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 55,
+        head: [["Product Name", "Quantity Sold"]],
+        body: Object.entries(analytics.topProducts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([name, qty]) => [name, formatNumber(qty)]),
+      });
+
+      // Low Stock Products Table
+      if (analytics.lowStockProducts.length > 0) {
+        autoTable(doc, {
+          startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 65,
+          head: [["Product Name", "Remaining Quantity", "Status"]],
+          body: analytics.lowStockProducts
+            .map((product) => {
+              const totalQuantity =
+                product.variations?.reduce((sum, variation) => {
+                  return (
+                    sum +
+                    variation.options?.reduce((optSum, option) => {
+                      return optSum + (option.quantity || 0);
+                    }, 0)
+                  );
+                }, 0) ||
+                product.quantity ||
+                0;
+              return [
+                product.name,
+                formatNumber(totalQuantity),
+                totalQuantity < 5 ? "Critical" : "Low",
+              ];
+            })
+            .sort((a, b) => a[1] - b[1]),
+        });
+      }
+
+      // Recent Orders Table (show discount/voucher)
+      autoTable(doc, {
+        startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 75,
+        head: [["Order ID", "Customer", "Products", "Subtotal", "Discount", "Voucher", "Shipping", "Total", "Status"]],
+        body: orders.slice(0, 10).map((order) => {
+          let subtotal = 0;
+          let vat = 0;
+          if (Array.isArray(order.items)) {
+            order.items.forEach((item) => {
+              let variationAdjustment = item.variationAdjustment || 0;
+              let basePrice = (item.price || 0) + variationAdjustment;
+              const discount = item.discount ? (basePrice * (item.discount / 100)) : 0;
+              const finalPrice = Math.round((basePrice - discount) * 100) / 100;
+              const itemTotal = Math.round((finalPrice * (item.quantity || 1)) * 100) / 100;
+              subtotal = Math.round((subtotal + itemTotal) * 100) / 100;
+              // VAT calculation
+              const itemVATRate = (item.vat || 0) / 100;
+              vat += (item.price || 0) * (item.quantity || 1) * itemVATRate;
+            });
+          }
+          const discount = order.discountAmount || 0;
+          const voucher = order.voucherAmount || 0;
+          const shipping = order.shippingFee || 0;
+          const total = Math.round((subtotal - discount - voucher + shipping) * 100) / 100;
+          return [
+            order.id || order._id || "",
+            order.customerName || order.userId || "Unknown",
+            order.items?.map?.((item) => item.name).join(", ") || "",
+            subtotal,
+            discount,
+            voucher,
+            shipping,
+            vat,
+            total,
+            order.status || "Unknown",
+          ];
+        }),
+      });
+
+      // Footer
+      doc.setFontSize(10);
+      doc.text("Thank you for using our analytics dashboard!", 14, 285);
+      doc.save("Order_Analytics_Report.pdf");
+      toast.success("PDF exported!");
+    } catch (err) {
+      toast.error("Failed to export PDF: " + err.message);
+    } finally {
+      setPdfLoading(false);
     }
-
-    // Recent Orders Table (show discount/voucher)
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 10,
-      head: [["Order ID", "Customer", "Products", "Subtotal", "Discount", "Voucher", "Shipping", "Total", "Status"]],
-      body: orders.slice(0, 10).map((order) => {
-        let subtotal = 0;
-        let vat = 0;
-        if (Array.isArray(order.items)) {
-          order.items.forEach((item) => {
-            let variationAdjustment = item.variationAdjustment || 0;
-            let basePrice = (item.price || 0) + variationAdjustment;
-            const discount = item.discount ? (basePrice * (item.discount / 100)) : 0;
-            const finalPrice = Math.round((basePrice - discount) * 100) / 100;
-            const itemTotal = Math.round((finalPrice * (item.quantity || 1)) * 100) / 100;
-            subtotal = Math.round((subtotal + itemTotal) * 100) / 100;
-            // VAT calculation
-            const itemVATRate = (item.vat || 0) / 100;
-            vat += (item.price || 0) * (item.quantity || 1) * itemVATRate;
-          });
-        }
-        const discount = order.discountAmount || 0;
-        const voucher = order.voucherAmount || 0;
-        const shipping = order.shippingFee || 0;
-        const total = Math.round((subtotal - discount - voucher + shipping) * 100) / 100;
-        return [
-          order.id || order._id || "",
-          order.customerName || order.userId || "Unknown",
-          order.items?.map?.((item) => item.name).join(", ") || "",
-          subtotal,
-          discount,
-          voucher,
-          shipping,
-          vat,
-          total,
-          order.status || "Unknown",
-        ];
-      }),
-    });
-
-    doc.save("Order_Analytics_Report.pdf");
   };
 
   // Helper: flatten items for export (up to 5 items)
@@ -1220,6 +1216,47 @@ const OrderAnalytics = () => {
     fetchUserCounts();
   }, []);
 
+  const downloadOrderCSVTemplate = () => {
+    const templateData = [
+      {
+        "Order ID": "",
+        "Customer Name": "Sample Customer",
+        "Address": "123 Sample St, City, Country",
+        "Payment Method": "Cash on Delivery",
+        "Payment Status": "Paid",
+        "Date Ordered": "2024-01-01",
+        "Status": "Order Placed",
+        "Amount": 1000,
+        "Discount": 0,
+        "Voucher": 0,
+        "Shipping": 100,
+        "Region Fee": 0,
+        "Item 1 Name": "Sample Product",
+        "Item 1 Qty": 2,
+        "Item 1 Price": 500,
+        "Item 1 Capital": 400,
+        "Item 1 Additional Capital": 0,
+        "Item 1 VAT": 12,
+        "Item 1 Discount": 0,
+        "Item 1 Variation Adjustment": 0,
+        "Item 1 Weight": 1,
+        // Add up to 5 items as columns
+      },
+    ];
+    const csv = Papa.unparse(templateData, { header: true });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "order_template.csv");
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Order CSV template downloaded!");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 items-center justify-center p-6 overflow-x-hidden">
       {/* Header Section */}
@@ -1233,14 +1270,27 @@ const OrderAnalytics = () => {
             <button
               onClick={exportToPDF}
               className="px-4 py-2 text-sm font-medium text-white transition-colors bg-indigo-600 rounded-lg hover:bg-indigo-700"
+              disabled={pdfLoading}
             >
-              Export PDF
+              {pdfLoading ? "Exporting..." : "Export PDF"}
             </button>
             <button
               onClick={exportToExcel}
               className="px-4 py-2 text-sm font-medium text-white transition-colors bg-emerald-600 rounded-lg hover:bg-emerald-700"
             >
               Export Excel
+            </button>
+            <button
+              onClick={exportToCSV}
+              className="px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={downloadOrderCSVTemplate}
+              className="px-4 py-2 text-sm font-medium text-white transition-colors bg-gray-800 rounded-lg hover:bg-gray-900"
+            >
+              Download CSV Template
             </button>
             <label className="px-4 py-2 text-sm font-medium text-white transition-colors bg-gray-600 rounded-lg cursor-pointer hover:bg-gray-700">
               Import Excel
